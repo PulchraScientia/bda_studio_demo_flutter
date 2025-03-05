@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'pakage.google_fonts/google_fonts.dart';
+// 올바른 import 방식으로 수정
+import 'package:google_fonts/google_fonts.dart';
 import 'config/routes.dart';
 import 'providers/workspace_provider.dart';
 import 'providers/experiment_provider.dart';
 import 'screens/home/home_screen.dart';
-
 
 void main() {
   runApp(const MyApp());
@@ -27,10 +26,11 @@ class MyApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           primarySwatch: Colors.blue,
+          scaffoldBackgroundColor: Colors.white,
+          // Google Fonts 사용
           textTheme: GoogleFonts.robotoTextTheme(
             Theme.of(context).textTheme,
           ),
-          scaffoldBackgroundColor: Colors.white,
           appBarTheme: const AppBarTheme(
             backgroundColor: Colors.white,
             elevation: 0,

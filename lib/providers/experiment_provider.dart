@@ -1,28 +1,35 @@
 import 'package:flutter/foundation.dart';
 import '../models/experiment.dart';
-import '../models/material.dart';
+// Material -> MaterialModel로 import 변경
+import '../models/material_model.dart';
 import '../models/evaluation.dart';
 import '../models/assistant.dart';
 import '../models/chat.dart';
+
 class ExperimentProvider with ChangeNotifier {
   Experiment? _selectedExperiment;
   List<Experiment> _experiments = [];
-  List<Material> _materials = [];
+  // Material -> MaterialModel로 타입 변경
+  List<MaterialModel> _materials = [];
   List<Evaluation> _evaluations = [];
   List<Assistant> _assistants = [];
   List<Chat> _chats = [];
   bool _isLoading = false;
+
   Experiment? get selectedExperiment => _selectedExperiment;
   List<Experiment> get experiments => _experiments;
-  List<Material> get materials => _materials;
+  // Material -> MaterialModel로 타입 변경
+  List<MaterialModel> get materials => _materials;
   List<Evaluation> get evaluations => _evaluations;
   List<Assistant> get assistants => _assistants;
   List<Chat> get chats => _chats;
   bool get isLoading => _isLoading;
+
   // 목업 데이터로 초기화
   ExperimentProvider() {
     _initMockData();
   }
+
   void _initMockData() {
     // 목업 실험 데이터 생성
     _experiments = [
@@ -53,9 +60,10 @@ class ExperimentProvider with ChangeNotifier {
         createdAt: DateTime.now().subtract(const Duration(days: 3)),
       ),
     ];
-    // 재료(Materials) 목업 데이터
+
+    // 재료(Materials) 목업 데이터 - Material -> MaterialModel로 변경
     _materials = [
-      Material(
+      MaterialModel(
         id: 'mat1',
         experimentId: 'exp1',
         trainSet: [
@@ -90,7 +98,7 @@ class ExperimentProvider with ChangeNotifier {
         ],
         createdAt: DateTime.now().subtract(const Duration(days: 4)),
       ),
-      Material(
+      MaterialModel(
         id: 'mat2',
         experimentId: 'exp2',
         trainSet: [
@@ -120,6 +128,7 @@ class ExperimentProvider with ChangeNotifier {
         createdAt: DateTime.now().subtract(const Duration(days: 2)),
       ),
     ];
+
     // 평가(Evaluations) 목업 데이터
     _evaluations = [
       Evaluation(
@@ -132,7 +141,7 @@ class ExperimentProvider with ChangeNotifier {
             id: 'res1',
             testItemId: 'test1',
             expectedSql: 'SELECT c.* FROM customers c JOIN orders o ON c.customer_id = o.customer_id GROUP BY c.customer_id HAVING COUNT(o.order_id) > 5',
-            generatedSql: 'SELECT c. FROM customers c JOIN orders o ON c.customer_id = o.customer_id GROUP BY c.customer_id HAVING COUNT() > 5',
+            generatedSql: 'SELECT c.* FROM customers c JOIN orders o ON c.customer_id = o.customer_id GROUP BY c.customer_id HAVING COUNT(*) > 5',
             isCorrect: false,
           ),
         ],
@@ -155,6 +164,7 @@ class ExperimentProvider with ChangeNotifier {
         createdAt: DateTime.now().subtract(const Duration(days: 1)),
       ),
     ];
+
     // 어시스턴트(Assistants) 목업 데이터
     _assistants = [
       Assistant(
@@ -174,6 +184,7 @@ class ExperimentProvider with ChangeNotifier {
         createdAt: DateTime.now().subtract(const Duration(hours: 12)),
       ),
     ];
+
     // 채팅(Chats) 목업 데이터
     _chats = [
       Chat(
@@ -199,32 +210,41 @@ class ExperimentProvider with ChangeNotifier {
       ),
     ];
   }
+
   void selectExperiment(String experimentId) {
     _selectedExperiment = _experiments.firstWhere((exp) => exp.id == experimentId);
     notifyListeners();
   }
+
   List<Experiment> getExperimentsForWorkspace(String workspaceId) {
     return _experiments.where((exp) => exp.workspaceId == workspaceId).toList();
   }
-  List<Material> getMaterialsForExperiment(String experimentId) {
+
+  // Material -> MaterialModel로 반환 타입 변경
+  List<MaterialModel> getMaterialsForExperiment(String experimentId) {
     return _materials.where((mat) => mat.experimentId == experimentId).toList();
   }
+
   List<Evaluation> getEvaluationsForExperiment(String experimentId) {
     return _evaluations.where((eval) => eval.experimentId == experimentId).toList();
   }
+
   List<Assistant> getAssistantsForExperiment(String experimentId) {
     return _assistants.where((assist) => assist.experimentId == experimentId).toList();
   }
+
   List<Chat> getChatsForAssistant(String assistantId) {
     return _chats.where((chat) => chat.assistantId == assistantId).toList();
   }
 
-Future<void> createExperiment(String workspaceId, String name, String description, Dataset dataset) async {
+  Future<void> createExperiment(String workspaceId, String name, String description, Dataset dataset) async {
     _isLoading = true;
     notifyListeners();
+
     try {
       // 실제 구현에서는 API 호출을 통해 실험 생성
       await Future.delayed(const Duration(seconds: 1)); // API 호출 시뮬레이션
+
       final newExperiment = Experiment(
         id: 'exp${_experiments.length + 1}',
         workspaceId: workspaceId,
@@ -233,6 +253,7 @@ Future<void> createExperiment(String workspaceId, String name, String descriptio
         dataset: dataset,
         createdAt: DateTime.now(),
       );
+
       _experiments.add(newExperiment);
       _selectedExperiment = newExperiment;
     } catch (e) {
@@ -243,13 +264,17 @@ Future<void> createExperiment(String workspaceId, String name, String descriptio
       notifyListeners();
     }
   }
+
+  // Material -> MaterialModel로 매개변수 타입 변경
   Future<void> createMaterial(String experimentId, List<MaterialItem> trainSet, List<MaterialItem> testSet, List<MaterialItem> knowledgeSet) async {
     _isLoading = true;
     notifyListeners();
+
     try {
       // 실제 구현에서는 API 호출을 통해 머티리얼 생성
       await Future.delayed(const Duration(seconds: 1)); // API 호출 시뮬레이션
-      final newMaterial = Material(
+
+      final newMaterial = MaterialModel(
         id: 'mat${_materials.length + 1}',
         experimentId: experimentId,
         trainSet: trainSet,
@@ -257,6 +282,7 @@ Future<void> createExperiment(String workspaceId, String name, String descriptio
         knowledgeSet: knowledgeSet,
         createdAt: DateTime.now(),
       );
+
       _materials.add(newMaterial);
     } catch (e) {
       // 오류 처리
@@ -266,31 +292,38 @@ Future<void> createExperiment(String workspaceId, String name, String descriptio
       notifyListeners();
     }
   }
+
   Future<void> createEvaluation(String experimentId, String materialId) async {
     _isLoading = true;
     notifyListeners();
+
     try {
       // 실제 구현에서는 API 호출을 통해 평가 실행
       await Future.delayed(const Duration(seconds: 2)); // 평가 실행 시뮬레이션
+
       // 평가 결과 예시를 무작위로 생성
       final material = _materials.firstWhere((m) => m.id == materialId);
       final results = <EvaluationResult>[];
       double correctCount = 0;
+
       for (var testItem in material.testSet) {
         final isCorrect = DateTime.now().millisecond % 2 == 0; // 무작위 정확도
         if (isCorrect) correctCount++;
+
         results.add(EvaluationResult(
           id: 'res${DateTime.now().millisecondsSinceEpoch}',
           testItemId: testItem.id,
           expectedSql: testItem.sql,
-          generatedSql: isCorrect
-              ? testItem.sql
+          generatedSql: isCorrect 
+              ? testItem.sql 
               : testItem.sql.replaceAll('ORDER BY', 'ORDER BY /* modified */'),
           isCorrect: isCorrect,
         ));
       }
-      final accuracy = material.testSet.isEmpty ?
+
+      final accuracy = material.testSet.isEmpty ? 
           0.0 : (correctCount / material.testSet.length) * 100;
+
       final newEvaluation = Evaluation(
         id: 'eval${_evaluations.length + 1}',
         experimentId: experimentId,
@@ -299,6 +332,7 @@ Future<void> createExperiment(String workspaceId, String name, String descriptio
         results: results,
         createdAt: DateTime.now(),
       );
+
       _evaluations.add(newEvaluation);
     } catch (e) {
       // 오류 처리
@@ -308,21 +342,26 @@ Future<void> createExperiment(String workspaceId, String name, String descriptio
       notifyListeners();
     }
   }
+
   Future<void> deployAssistant(String experimentId, String evaluationId, String name) async {
     _isLoading = true;
     notifyListeners();
+
     try {
       // 실제 구현에서는 API 호출을 통해 어시스턴트 배포
       await Future.delayed(const Duration(seconds: 1)); // API 호출 시뮬레이션
+
       // 동일한 이름의 어시스턴트가 있는지 확인
-      final existingAssistant = _assistants.where((a) =>
+      final existingAssistant = _assistants.where((a) => 
           a.name == name && a.experimentId == experimentId).toList();
+      
       int version = 1;
       if (existingAssistant.isNotEmpty) {
         // 버전 업그레이드
         version = existingAssistant.map((a) => a.version).reduce(
             (a, b) => a > b ? a : b) + 1;
       }
+
       final newAssistant = Assistant(
         id: 'assist${_assistants.length + 1}',
         name: name,
@@ -331,6 +370,7 @@ Future<void> createExperiment(String workspaceId, String name, String descriptio
         version: version,
         createdAt: DateTime.now(),
       );
+
       _assistants.add(newAssistant);
     } catch (e) {
       // 오류 처리
@@ -340,12 +380,15 @@ Future<void> createExperiment(String workspaceId, String name, String descriptio
       notifyListeners();
     }
   }
+
   Future<void> createChat(String assistantId, String experimentId, String initialMessage) async {
     _isLoading = true;
     notifyListeners();
+
     try {
       // 실제 구현에서는 API 호출을 통해 채팅 생성
       await Future.delayed(const Duration(seconds: 1)); // API 호출 시뮬레이션
+
       final newChat = Chat(
         id: 'chat${_chats.length + 1}',
         assistantId: assistantId,
@@ -361,6 +404,7 @@ Future<void> createExperiment(String workspaceId, String name, String descriptio
         ],
         createdAt: DateTime.now(),
       );
+
       _chats.add(newChat);
     } catch (e) {
       // 오류 처리
@@ -370,15 +414,19 @@ Future<void> createExperiment(String workspaceId, String name, String descriptio
       notifyListeners();
     }
   }
+
   Future<void> sendMessage(String chatId, String content) async {
     _isLoading = true;
     notifyListeners();
+
     try {
       // 실제 구현에서는 API 호출을 통해 메시지 전송
       await Future.delayed(const Duration(seconds: 1)); // API 호출 시뮬레이션
+
       final index = _chats.indexWhere((c) => c.id == chatId);
       if (index != -1) {
         final chat = _chats[index];
+        
         // 사용자 메시지 추가
         final userMessage = ChatMessage(
           id: 'msg${DateTime.now().millisecondsSinceEpoch}',
@@ -386,6 +434,7 @@ Future<void> createExperiment(String workspaceId, String name, String descriptio
           content: content,
           timestamp: DateTime.now(),
         );
+        
         // 모의 AI 응답 생성
         await Future.delayed(const Duration(seconds: 1)); // 응답 생성 시뮬레이션
         final aiMessage = ChatMessage(
@@ -394,7 +443,9 @@ Future<void> createExperiment(String workspaceId, String name, String descriptio
           content: 'This is a mock response to "$content". In a real implementation, this would be generated by the AI assistant.',
           timestamp: DateTime.now().add(const Duration(seconds: 1)),
         );
+        
         final updatedMessages = [...chat.messages, userMessage, aiMessage];
+        
         _chats[index] = Chat(
           id: chat.id,
           assistantId: chat.assistantId,
@@ -412,14 +463,9 @@ Future<void> createExperiment(String workspaceId, String name, String descriptio
       notifyListeners();
     }
   }
+
   void clearSelectedExperiment() {
     _selectedExperiment = null;
     notifyListeners();
   }
 }
-
-
-
-
-
-

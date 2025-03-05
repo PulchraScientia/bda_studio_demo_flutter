@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 import '../screens/home/home_screen.dart';
-import '../screens/workspace/workspace_list.dart';
-import '../screens/workspace/workspace_create.dart';
-import '../screens/workspace/workspace_detail.dart';
-import '../screens/experiments/experiment_list.dart';
-import '../screens/experiments/experiment_create.dart';
-import '../screens/experiments/experiment_detail.dart';
-import '../screens/materials/material_list.dart';
-import '../screens/evaluations/evaluation_list.dart';
-import '../screens/evaluations/evaluation_detail.dart';
-import '../screens/assistants/assistant_list.dart';
-import '../screens/chats/chat_list.dart';
-import '../screens/chats/chat_detail.dart';
+import '../screens/workspace/workspace_list_screen.dart';
+import '../screens/workspace/workspace_create_screen.dart';
+import '../screens/workspace/workspace_detail_screen.dart';
+import '../screens/experiments/experiment_list_screen.dart';
+import '../screens/experiments/experiment_create_screen.dart';
+import '../screens/experiments/experiment_detail_screen.dart';
+// 수정된 파일 경로
+import '../screens/materials/material_screen.dart';
+import '../screens/evaluations/evaluation_list_screen.dart';
+import '../screens/evaluations/evaluation_detail_screen.dart';
+import '../screens/assistants/assistant_list_screen.dart';
+// 채팅 화면 파일 경로 수정
+import '../screens/chats/chat_screen.dart';
 
 class AppRoutes {
   static const String home = '/';
@@ -62,7 +63,7 @@ class AppRoutes {
       case materialList:
         final args = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(
-          builder: (_) => MaterialListScreen(
+          builder: (_) => MaterialScreen(
             workspaceId: args?['workspaceId'],
             experimentId: args?['experimentId'],
           ),
@@ -93,22 +94,13 @@ class AppRoutes {
           ),
         );
       case chatList:
-        final args = settings.arguments as Map<String, dynamic>?;
-        return MaterialPageRoute(
-          builder: (_) => ChatListScreen(
-            workspaceId: args?['workspaceId'],
-            experimentId: args?['experimentId'],
-            assistantId: args?['assistantId'],
-          ),
-        );
       case chatDetail:
         final args = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(
-          builder: (_) => ChatDetailScreen(
+          builder: (_) => ChatScreen(
             workspaceId: args?['workspaceId'],
             experimentId: args?['experimentId'],
             assistantId: args?['assistantId'],
-            chatId: args?['chatId'],
           ),
         );
       default:
