@@ -17,125 +17,235 @@ class SidebarMenu extends StatelessWidget {
     
     return Container(
       width: 250,
-      color: Colors.grey[200],
-      padding: const EdgeInsets.symmetric(vertical: 24),
+      color: Colors.grey[900],
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: InkWell(
-              onTap: () {
-                workspaceProvider.clearSelectedWorkspace();
-                experimentProvider.clearSelectedExperiment();
-                Navigator.pushNamed(context, AppRoutes.workspaceList);
-              },
-              child: const Text(
-                'workspace',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue,
+          // 로고 및 앱 이름
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+            color: Colors.blue[800],
+            width: double.infinity,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                InkWell(
+                  onTap: () {
+                    Navigator.pushNamed(context, AppRoutes.home);
+                  },
+                  child: const Text(
+                    'BDA Studio',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
                 ),
-              ),
+                if (selectedWorkspace != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Text(
+                      selectedWorkspace.name,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.white70,
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
-          const SizedBox(height: 16),
           
-          // 선택된 워크스페이스가 있을 때 메뉴 표시
-          if (selectedWorkspace != null) ...[
-            _buildMenuItem(
-              context: context,
-              title: 'experiments',
-              isSelected: selectedExperiment == null,
-              onTap: () {
-                experimentProvider.clearSelectedExperiment();
-                Navigator.pushNamed(
-                  context, 
-                  AppRoutes.experimentList,
-                  arguments: {'workspaceId': selectedWorkspace.id},
-                );
-              },
-            ),
-            
-            // 선택된 실험이 있을 때 하위 메뉴 표시
-            if (selectedExperiment != null) ...[
-              _buildSubMenuItem(
-                context: context,
-                title: 'materials',
-                onTap: () {
-                  Navigator.pushNamed(
-                    context, 
-                    AppRoutes.materialList,
-                    arguments: {
-                      'workspaceId': selectedWorkspace.id,
-                      'experimentId': selectedExperiment.id,
+          // 워크스페이스 메뉴
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              children: [
+                _buildMenuHeader(
+                  context: context,
+                  title: 'WORKSPACE',
+                  onTap: () {
+                    workspaceProvider.clearSelectedWorkspace();
+                    experimentProvider.clearSelectedExperiment();
+                    Navigator.pushNamed(context, AppRoutes.workspaceList);
+                  },
+                ),
+                
+                // 선택된 워크스페이스가 있을 때 실험 메뉴 표시
+                if (selectedWorkspace != null) ...[
+                  const SizedBox(height: 16),
+                  _buildMenuHeader(
+                    context: context,
+                    title: 'EXPERIMENTS',
+                    onTap: () {
+                      experimentProvider.clearSelectedExperiment();
+                      Navigator.pushNamed(
+                        context, 
+                        AppRoutes.experimentList,
+                        arguments: {'workspaceId': selectedWorkspace.id},
+                      );
                     },
-                  );
-                },
-              ),
-              _buildSubMenuItem(
-                context: context,
-                title: 'evaluations',
-                onTap: () {
-                  Navigator.pushNamed(
-                    context, 
-                    AppRoutes.evaluationList,
-                    arguments: {
-                      'workspaceId': selectedWorkspace.id,
-                      'experimentId': selectedExperiment.id,
-                    },
-                  );
-                },
-              ),
-              _buildSubMenuItem(
-                context: context,
-                title: 'assistants',
-                onTap: () {
-                  Navigator.pushNamed(
-                    context, 
-                    AppRoutes.assistantList,
-                    arguments: {
-                      'workspaceId': selectedWorkspace.id,
-                      'experimentId': selectedExperiment.id,
-                    },
-                  );
-                },
-              ),
-              _buildSubMenuItem(
-                context: context,
-                title: 'chats',
-                onTap: () {
-                  // 첫 번째 어시스턴트의 채팅 목록으로 이동
-                  final assistants = experimentProvider.getAssistantsForExperiment(selectedExperiment.id);
-                  if (assistants.isNotEmpty) {
-                    Navigator.pushNamed(
-                      context, 
-                      AppRoutes.chatList,
-                      arguments: {
-                        'workspaceId': selectedWorkspace.id,
-                        'experimentId': selectedExperiment.id,
-                        'assistantId': assistants[0].id,
+                  ),
+                  
+                  // 선택된 실험이 있을 때 하위 메뉴 표시
+                  if (selectedExperiment != null) ...[
+                    _buildMenuItem(
+                      context: context,
+                      title: 'Materials',
+                      icon: Icons.science,
+                      onTap: () {
+                        Navigator.pushNamed(
+                          context, 
+                          AppRoutes.materialList,
+                          arguments: {
+                            'workspaceId': selectedWorkspace.id,
+                            'experimentId': selectedExperiment.id,
+                          },
+                        );
                       },
-                    );
-                  } else {
+                    ),
+                    _buildMenuItem(
+                      context: context,
+                      title: 'Evaluations',
+                      icon: Icons.check_circle,
+                      onTap: () {
+                        Navigator.pushNamed(
+                          context, 
+                          AppRoutes.evaluationList,
+                          arguments: {
+                            'workspaceId': selectedWorkspace.id,
+                            'experimentId': selectedExperiment.id,
+                          },
+                        );
+                      },
+                    ),
+                    _buildMenuItem(
+                      context: context,
+                      title: 'Assistants',
+                      icon: Icons.support_agent,
+                      onTap: () {
+                        Navigator.pushNamed(
+                          context, 
+                          AppRoutes.assistantList,
+                          arguments: {
+                            'workspaceId': selectedWorkspace.id,
+                            'experimentId': selectedExperiment.id,
+                          },
+                        );
+                      },
+                    ),
+                    _buildMenuItem(
+                      context: context,
+                      title: 'Chats',
+                      icon: Icons.chat,
+                      onTap: () {
+                        // 어시스턴트가 있는지 확인
+                        final assistants = experimentProvider.getAssistantsForExperiment(selectedExperiment.id);
+                        if (assistants.isNotEmpty) {
+                          Navigator.pushNamed(
+                            context, 
+                            AppRoutes.chatList,
+                            arguments: {
+                              'workspaceId': selectedWorkspace.id,
+                              'experimentId': selectedExperiment.id,
+                              'assistantId': assistants[0].id,
+                            },
+                          );
+                        } else {
+                          _showNoAssistantsDialog(context);
+                        }
+                      },
+                    ),
+                  ],
+                ],
+              ],
+            ),
+          ),
+          
+          // 하단 메뉴 (설정 등)
+          Container(
+            color: Colors.grey[850],
+            child: Column(
+              children: [
+                const Divider(color: Colors.grey, height: 1),
+                _buildMenuItem(
+                  context: context,
+                  title: 'Settings',
+                  icon: Icons.settings,
+                  onTap: () {
+                    // 설정 페이지로 이동 (미구현)
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('No assistants available. Please create an assistant first.')),
+                      const SnackBar(content: Text('Settings page not implemented yet')),
                     );
-                  }
-                },
-              ),
-            ],
-          ],
+                  },
+                ),
+                _buildMenuItem(
+                  context: context,
+                  title: 'Help',
+                  icon: Icons.help,
+                  onTap: () {
+                    // 도움말 페이지로 이동 (미구현)
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Help page not implemented yet')),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
   
+  // 어시스턴트가 없을 때 다이얼로그 표시
+  void _showNoAssistantsDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('No Assistants Available'),
+        content: const Text(
+          'You need to create an assistant first.\n\nGo to Evaluations and deploy an evaluation as an assistant.'
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  // 메뉴 헤더 위젯
+  Widget _buildMenuHeader({
+    required BuildContext context,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(4),
+        child: Text(
+          title,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: Colors.blue[300],
+          ),
+        ),
+      ),
+    );
+  }
+  
+  // 메뉴 아이템 위젯
   Widget _buildMenuItem({
     required BuildContext context,
     required String title,
-    required bool isSelected,
+    required IconData icon,
     required VoidCallback onTap,
   }) {
     return InkWell(
@@ -143,34 +253,22 @@ class SidebarMenu extends StatelessWidget {
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        color: isSelected ? Colors.blue.withOpacity(0.1) : null,
-        child: Text(
-          title,
-          style: TextStyle(
-            fontSize: 16,
-            color: isSelected ? Colors.blue : Colors.black54,
-          ),
-        ),
-      ),
-    );
-  }
-  
-  Widget _buildSubMenuItem({
-    required BuildContext context,
-    required String title,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.only(left: 32, right: 16, top: 8, bottom: 8),
-        child: Text(
-          title,
-          style: const TextStyle(
-            fontSize: 14,
-            color: Colors.black54,
-          ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              size: 20,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(width: 12),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[300],
+              ),
+            ),
+          ],
         ),
       ),
     );

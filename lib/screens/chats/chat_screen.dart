@@ -6,6 +6,7 @@ import '../../providers/workspace_provider.dart';
 import '../../providers/experiment_provider.dart';
 import '../../widgets/sidebar_menu.dart';
 import '../../models/chat.dart';
+import '../../models/assistant.dart';  // Assistant 클래스 import 추가
 
 class ChatScreen extends StatefulWidget {
   final String? workspaceId;
@@ -63,24 +64,40 @@ class _ChatScreenState extends State<ChatScreen> {
         experimentProvider.experiments.firstWhere((exp) => exp.id == widget.experimentId);
     
     // 현재 어시스턴트 정보 가져오기
-    final assistant = experimentProvider.assistants.firstWhere(
-      (a) => a.id == widget.assistantId,
-      orElse: () => experimentProvider.assistants.first,
-    );
+    final assistant = widget.assistantId != null
+        ? experimentProvider.assistants.firstWhere(
+            (a) => a.id == widget.assistantId,
+            orElse: () => experimentProvider.assistants.isNotEmpty
+                ? experimentProvider.assistants.first
+                : Assistant(
+                    id: 'default',
+                    name: 'Default Assistant',
+                    experimentId: experiment.id,
+                    evaluationId: '',
+                    version: 1,
+                    createdAt: DateTime.now(),
+                  ),
+          )
+        : experimentProvider.assistants.first;
     
     // 해당 어시스턴트의 채팅 목록 가져오기
     final chats = experimentProvider.getChatsForAssistant(assistant.id);
     
     // 현재 채팅 가져오기
-    ChatMessage? lastMessage;
+    late Chat currentChat;
+    List<ChatMessage> currentMessages = [];
+    
     if (chats.isNotEmpty) {
-      final chat = chats.firstWhere(
+      currentChat = chats.firstWhere(
         (c) => c.name == _selectedChatRoom,
         orElse: () => chats.first,
       );
       
-      if (chat.messages.isNotEmpty) {
-        lastMessage = chat.messages.last;
+      currentMessages = currentChat.messages;
+      
+      // 선택된 채팅방 이름 업데이트
+      if (_selectedChatRoom != currentChat.name) {
+        _selectedChatRoom = currentChat.name;
       }
     }
 
@@ -148,7 +165,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                     horizontal: 12,
                                     vertical: 8,
                                   ),
-                                  child: Text(_selectedAssistant),
+                                  child: Text(assistant.name),
                                 ),
                                 const SizedBox(height: 16),
                                 
@@ -163,21 +180,41 @@ class _ChatScreenState extends State<ChatScreen> {
                                   child: TextButton(
                                     onPressed: () {
                                       // 채팅 초기화 액션
+                                      _showNewChatDialog(context, assistant.id, experiment.id);
                                     },
-                                    child: const Text('Clear Chat'),
+                                    child: const Text('New Chat'),
                                   ),
                                 ),
                                 const SizedBox(height: 16),
                                 
                                 // 채팅방 목록
                                 Expanded(
-                                  child: ListView(
-                                    children: [
-                                      _buildChatRoomItem('Chat room 1'),
-                                      _buildChatRoomItem('Chat room 2'),
-                                      _buildChatRoomItem('Chat room 3'),
-                                    ],
-                                  ),
+                                  child: chats.isEmpty
+                                      ? const Center(
+                                          child: Text(
+                                            'No chats found. Start a new conversation.',
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(
+                                              color: Colors.grey,
+                                            ),
+                                          ),
+                                        )
+                                      : ListView.builder(
+                                          itemCount: chats.length,
+                                          itemBuilder: (context, index) {
+                                            final chat = chats[index];
+                                            return _buildChatRoomItem(
+                                              chat.name,
+                                              onTap: () {
+                                                setState(() {
+                                                  _selectedChatRoom = chat.name;
+                                                });
+                                                // 채팅 내용이 변경되면 스크롤을 아래로 이동
+                                                _scrollToBottom();
+                                              }
+                                            );
+                                          },
+                                        ),
                                 ),
                               ],
                             ),
@@ -187,94 +224,29 @@ class _ChatScreenState extends State<ChatScreen> {
                           Expanded(
                             child: Column(
                               children: [
-                                // 채팅 안내 영역
-                                Container(
-                                  padding: const EdgeInsets.all(16),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      // 배포 버튼
-                                      Container(
-                                        alignment: Alignment.topRight,
-                                        child: TextButton.icon(
-                                          onPressed: () {
-                                            // 배포 액션
-                                          },
-                                          icon: const Icon(Icons.cloud_upload),
-                                          label: const Text('Deploy'),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      
-                                      // 안내 메시지 (한국어)
-                                      Row(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          const Text('○'),
-                                          const SizedBox(width: 8),
-                                          const Expanded(
-                                            child: Text(
-                                              '추가로 선택할 개체는 Shift 키를 누른 상태에서 같이 클릭합니다.',
+                                // 채팅 메시지 영역
+                                Expanded(
+                                  child: currentMessages.isEmpty
+                                      ? const Center(
+                                          child: Text(
+                                            'No messages yet. Start a conversation!',
+                                            style: TextStyle(
+                                              color: Colors.grey,
+                                              fontSize: 16,
                                             ),
                                           ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Row(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          const Text('○'),
-                                          const SizedBox(width: 8),
-                                          const Expanded(
-                                            child: Text(
-                                              '또는, 마우스를 드래그하여 여러 개체를 선택할 수도 있습니다.',
-                                            ),
+                                        )
+                                      : Padding(
+                                          padding: const EdgeInsets.all(16.0),
+                                          child: ListView.builder(
+                                            controller: _scrollController,
+                                            itemCount: currentMessages.length,
+                                            itemBuilder: (context, index) {
+                                              final message = currentMessages[index];
+                                              return _buildMessageItem(message);
+                                            },
                                           ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 8),
-                                      
-                                      const Text('3. 개체 그룹화:'),
-                                      const SizedBox(height: 8),
-                                      
-                                      Padding(
-                                        padding: const EdgeInsets.only(left: 16.0),
-                                        child: Row(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            const Text('○'),
-                                            const SizedBox(width: 8),
-                                            RichText(
-                                              text: const TextSpan(
-                                                style: TextStyle(color: Colors.black),
-                                                children: [
-                                                  TextSpan(text: '개체가 모두 선택된 상태에서 상단 메뉴의 '),
-                                                  TextSpan(
-                                                    text: 'Format (서식)',
-                                                    style: TextStyle(color: Colors.green),
-                                                  ),
-                                                  TextSpan(text: ' 메뉴를 클릭합니다.'),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
                                         ),
-                                      ),
-                                      
-                                      // 나머지 안내 텍스트들...
-                                      
-                                      const SizedBox(height: 24),
-                                      const Text(
-                                        '여러 개체를 묶는 단계별 요약:',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      
-                                      // 요약 단계들...
-                                    ],
-                                  ),
                                 ),
                                 
                                 // 메시지 입력 영역
@@ -301,14 +273,22 @@ class _ChatScreenState extends State<ChatScreen> {
                                             ),
                                           ),
                                           onSubmitted: (value) {
-                                            _sendMessage(context, experimentProvider, assistant.id);
+                                            if (chats.isNotEmpty) {
+                                              _sendMessage(context, experimentProvider, assistant.id);
+                                            } else {
+                                              _showNewChatDialog(context, assistant.id, experiment.id);
+                                            }
                                           },
                                         ),
                                       ),
                                       const SizedBox(width: 8),
                                       IconButton(
                                         onPressed: () {
-                                          _sendMessage(context, experimentProvider, assistant.id);
+                                          if (chats.isNotEmpty) {
+                                            _sendMessage(context, experimentProvider, assistant.id);
+                                          } else {
+                                            _showNewChatDialog(context, assistant.id, experiment.id);
+                                          }
                                         },
                                         icon: const Icon(Icons.send),
                                         color: Colors.blue,
@@ -332,8 +312,55 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
   
+  // 새 채팅방 생성 다이얼로그
+  void _showNewChatDialog(BuildContext context, String assistantId, String experimentId) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('New Chat'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _messageController,
+              decoration: const InputDecoration(
+                hintText: 'Enter your first message',
+              ),
+              maxLines: 3,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (_messageController.text.trim().isNotEmpty) {
+                final experimentProvider = Provider.of<ExperimentProvider>(context, listen: false);
+                experimentProvider.createChat(
+                  assistantId,
+                  experimentId,
+                  _messageController.text.trim(),
+                );
+                Navigator.pop(context);
+                setState(() {
+                  _selectedChatRoom = "Chat ${experimentProvider.chats.length}";
+                });
+                _messageController.clear();
+                _scrollToBottom();
+              }
+            },
+            child: const Text('Create'),
+          ),
+        ],
+      ),
+    );
+  }
+  
   // 채팅방 아이템 위젯
-  Widget _buildChatRoomItem(String name) {
+  Widget _buildChatRoomItem(String name, {required VoidCallback onTap}) {
     final isSelected = name == _selectedChatRoom;
     
     return Container(
@@ -352,11 +379,56 @@ class _ChatScreenState extends State<ChatScreen> {
             color: isSelected ? Colors.blue : Colors.black,
           ),
         ),
-        onTap: () {
-          setState(() {
-            _selectedChatRoom = name;
-          });
-        },
+        onTap: onTap,
+      ),
+    );
+  }
+  
+  // 메시지 아이템 위젯
+  Widget _buildMessageItem(ChatMessage message) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: message.isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (!message.isUser) ...[
+            CircleAvatar(
+              backgroundColor: Colors.blue.shade200,
+              child: const Icon(Icons.smart_toy, color: Colors.white),
+            ),
+            const SizedBox(width: 8),
+          ],
+          Flexible(
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: message.isUser ? Colors.blue.shade100 : Colors.grey.shade200,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    message.isUser ? 'You' : 'Assistant',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(message.content),
+                ],
+              ),
+            ),
+          ),
+          if (message.isUser) ...[
+            const SizedBox(width: 8),
+            CircleAvatar(
+              backgroundColor: Colors.blue.shade500,
+              child: const Icon(Icons.person, color: Colors.white),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -374,7 +446,6 @@ class _ChatScreenState extends State<ChatScreen> {
     
     // 채팅 존재 여부 확인
     final chats = experimentProvider.getChatsForAssistant(assistantId);
-    String chatId;
     
     if (chats.isEmpty || !chats.any((c) => c.name == _selectedChatRoom)) {
       // 새 채팅 생성
@@ -383,6 +454,9 @@ class _ChatScreenState extends State<ChatScreen> {
         experimentProvider.selectedExperiment!.id,
         content,
       );
+      setState(() {
+        _selectedChatRoom = "Chat ${experimentProvider.chats.length}";
+      });
     } else {
       // 메시지 전송
       final chat = chats.firstWhere((c) => c.name == _selectedChatRoom);

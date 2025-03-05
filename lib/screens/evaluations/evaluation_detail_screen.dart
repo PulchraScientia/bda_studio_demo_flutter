@@ -5,6 +5,7 @@ import '../../config/routes.dart';
 import '../../providers/workspace_provider.dart';
 import '../../providers/experiment_provider.dart';
 import '../../widgets/sidebar_menu.dart';
+import '../../models/evaluation.dart';
 
 class EvaluationDetailScreen extends StatefulWidget {
   final String? workspaceId;
@@ -38,11 +39,15 @@ class _EvaluationDetailScreenState extends State<EvaluationDetailScreen> {
     final experiment = experimentProvider.selectedExperiment ?? 
         experimentProvider.experiments.firstWhere((exp) => exp.id == widget.experimentId);
     
-    // 해당 평가 정보 가져오기
-    final evaluation = experimentProvider.evaluations.firstWhere(
-      (eval) => eval.id == widget.evaluationId,
-      orElse: () => experimentProvider.evaluations.first,
-    );
+    // 해당 평가 정보 가져오기 - nullable로 변경
+    final Evaluation? evaluation = widget.evaluationId != null 
+        ? experimentProvider.evaluations.firstWhere(
+            (eval) => eval.id == widget.evaluationId,
+            orElse: () => experimentProvider.evaluations.isNotEmpty 
+                ? experimentProvider.evaluations.first 
+                : null!,  // orElse는 null을 반환할 수 없으므로 수정 필요
+          )
+        : null;
 
     return Scaffold(
       body: Row(
@@ -57,9 +62,34 @@ class _EvaluationDetailScreenState extends State<EvaluationDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // 헤더와 뒤로가기 버튼
+                  Row(
+                    children: [
+                      InkWell(
+                        onTap: () {
+                          Navigator.pop(context);
+                        },
+                        child: Row(
+                          children: [
+                            const Icon(Icons.arrow_back),
+                            const SizedBox(width: 8),
+                            Text(
+                              '<< Back to evaluations',
+                              style: TextStyle(
+                                color: Colors.blue[700],
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  
                   // 헤더
                   const Text(
-                    'Evaluations',
+                    'Evaluation Details',
                     style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
@@ -87,10 +117,14 @@ class _EvaluationDetailScreenState extends State<EvaluationDetailScreen> {
                               decoration: BoxDecoration(
                                 border: Border.all(color: Colors.grey.shade300),
                               ),
-                              child: const Center(
+                              child: Center(
                                 child: Text(
-                                  'Evaluation 1',
-                                  style: TextStyle(
+                                  widget.evaluationId != null && widget.evaluationId!.contains('eval')
+                                      ? 'Evaluation ${widget.evaluationId!.replaceAll('eval', '')}'
+                                      : evaluation != null 
+                                          ? 'Evaluation ${evaluation.id.replaceAll(RegExp(r'[^0-9]'), '')}'
+                                          : 'Evaluation 1',
+                                  style: const TextStyle(
                                     fontSize: 20,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -189,14 +223,17 @@ class _EvaluationDetailScreenState extends State<EvaluationDetailScreen> {
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: const [
-                                      Text(
+                                    children: [
+                                      const Text(
                                         'Created:',
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
-                                      Text('2025-03-04 11:53:20'),
+                                      Text(
+                                        evaluation?.createdAt.toString().substring(0, 16) ?? 
+                                        '2025-03-04 11:53:20',
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -220,14 +257,14 @@ class _EvaluationDetailScreenState extends State<EvaluationDetailScreen> {
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: const [
-                                      Text(
+                                    children: [
+                                      const Text(
                                         'Accuracy',
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
-                                      Text('85.0%'),
+                                      Text('${evaluation?.accuracy.toStringAsFixed(1) ?? "85.0"}%'),
                                     ],
                                   ),
                                 ),
@@ -323,11 +360,11 @@ class _EvaluationDetailScreenState extends State<EvaluationDetailScreen> {
                                     children: [
                                       const Padding(
                                         padding: EdgeInsets.all(8.0),
-                                        child: Text('all'),
+                                        child: Text('Show customers who bought more than 5 products'),
                                       ),
                                       const Padding(
                                         padding: EdgeInsets.all(8.0),
-                                        child: Text('SELECT * FROM table...'),
+                                        child: Text('SELECT c.* FROM customers c JOIN orders o ON c.customer_id = o.customer_id GROUP BY c.customer_id HAVING COUNT(*) > 5'),
                                       ),
                                       Padding(
                                         padding: const EdgeInsets.all(8.0),
@@ -353,7 +390,7 @@ class _EvaluationDetailScreenState extends State<EvaluationDetailScreen> {
                                   items: const [
                                     DropdownMenuItem(
                                       value: 'all',
-                                      child: Text('all...'),
+                                      child: Text('Show customers who bought more than 5 products'),
                                     ),
                                   ],
                                   onChanged: (value) {
@@ -401,7 +438,7 @@ class _EvaluationDetailScreenState extends State<EvaluationDetailScreen> {
                                           borderRadius: BorderRadius.circular(4),
                                         ),
                                         child: const Text(
-                                          'SELECT * FROM table',
+                                          'SELECT c.* FROM customers c JOIN orders o ON c.customer_id = o.customer_id GROUP BY c.customer_id HAVING COUNT(o.order_id) > 5',
                                           style: TextStyle(
                                             fontFamily: 'monospace',
                                           ),
@@ -430,7 +467,7 @@ class _EvaluationDetailScreenState extends State<EvaluationDetailScreen> {
                                           borderRadius: BorderRadius.circular(4),
                                         ),
                                         child: const Text(
-                                          'SELECT * FROM table',
+                                          'SELECT c.* FROM customers c JOIN orders o ON c.customer_id = o.customer_id GROUP BY c.customer_id HAVING COUNT(*) > 5',
                                           style: TextStyle(
                                             fontFamily: 'monospace',
                                           ),
@@ -452,9 +489,10 @@ class _EvaluationDetailScreenState extends State<EvaluationDetailScreen> {
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: const Text(
-                                'Differences detected!',
+                                'Differences detected: COUNT(*) vs COUNT(o.order_id)',
                                 style: TextStyle(
                                   color: Colors.red,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ),
@@ -477,7 +515,7 @@ class _EvaluationDetailScreenState extends State<EvaluationDetailScreen> {
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: const Text(
-                                'Hint: Check the WHERE clause conditions, function calls, and column references.',
+                                'Hint: COUNT(*) counts all rows, while COUNT(o.order_id) only counts non-NULL order_id values. In some cases, this could lead to different results.',
                                 style: TextStyle(
                                   color: Colors.blue,
                                 ),
@@ -496,7 +534,7 @@ class _EvaluationDetailScreenState extends State<EvaluationDetailScreen> {
                                       context,
                                       experimentProvider,
                                       experiment.id,
-                                      evaluation.id,
+                                      widget.evaluationId ?? 'eval1',
                                     );
                                   },
                                   style: ElevatedButton.styleFrom(
@@ -504,6 +542,7 @@ class _EvaluationDetailScreenState extends State<EvaluationDetailScreen> {
                                       horizontal: 24,
                                       vertical: 12,
                                     ),
+                                    backgroundColor: Colors.green,
                                   ),
                                   child: const Text('Deploy as Assistant'),
                                 ),

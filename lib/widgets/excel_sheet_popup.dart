@@ -24,6 +24,10 @@ class _ExcelSheetPopupState extends State<ExcelSheetPopup> {
   late List<List<String>> _data;
   final FocusNode _tableFocusNode = FocusNode();
   
+  // 현재 선택된 셀 위치
+  int _selectedRow = 0;
+  int _selectedCol = 0;
+  
   // 최소 행 수
   final int _minRows = 5;
 
@@ -37,6 +41,11 @@ class _ExcelSheetPopupState extends State<ExcelSheetPopup> {
     while (_data.length < _minRows) {
       _data.add(List.filled(widget.headers.length, ''));
     }
+    
+    // 클립보드 이벤트를 감지하기 위한 포커스 요청
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _tableFocusNode.requestFocus();
+    });
   }
 
   @override
@@ -48,7 +57,7 @@ class _ExcelSheetPopupState extends State<ExcelSheetPopup> {
   // 클립보드의 텍스트 데이터를 2차원 배열로 변환
   List<List<String>> _parseClipboardData(String data) {
     // 줄 단위로 분할
-    final rows = data.split('\n');
+    final rows = data.split(RegExp(r'\r\n|\r|\n'));
     
     // 각 줄을 탭으로 분할하여 셀 데이터 생성
     return rows
@@ -59,29 +68,74 @@ class _ExcelSheetPopupState extends State<ExcelSheetPopup> {
 
   // 클립보드에서 데이터 붙여넣기
   Future<void> _pasteFromClipboard(int startRow, int startCol) async {
-    // 클립보드 데이터 가져오기
-    final clipboardData = await Clipboard.getData(Clipboard.kTextPlain);
-    if (clipboardData == null || clipboardData.text == null) return;
-
-    final pastedData = _parseClipboardData(clipboardData.text!);
-    if (pastedData.isEmpty) return;
-
-    setState(() {
-      // 데이터 붙여넣기
-      for (int i = 0; i < pastedData.length; i++) {
-        final rowIndex = startRow + i;
-        
-        // 필요한 경우 행 추가
-        while (rowIndex >= _data.length) {
-          _data.add(List.filled(widget.headers.length, ''));
-        }
-        
-        // 열 데이터 복사
-        for (int j = 0; j < pastedData[i].length && j + startCol < widget.headers.length; j++) {
-          _data[rowIndex][j + startCol] = pastedData[i][j];
-        }
+    try {
+      // 클립보드 데이터 가져오기
+      final clipboardData = await Clipboard.getData(Clipboard.kTextPlain);
+      if (clipboardData == null || clipboardData.text == null) {
+        _showSnackBar('No data in clipboard');
+        return;
       }
-    });
+
+      final pastedData = _parseClipboardData(clipboardData.text!);
+      if (pastedData.isEmpty) {
+        _showSnackBar('No valid data to paste');
+        return;
+      }
+
+      setState(() {
+        // 데이터 붙여넣기
+        for (int i = 0; i < pastedData.length; i++) {
+          final rowIndex = startRow + i;
+          
+          // 필요한 경우 행 추가
+          while (rowIndex >= _data.length) {
+            _data.add(List.filled(widget.headers.length, ''));
+          }
+          
+          // 열 데이터 복사
+          for (int j = 0; j < pastedData[i].length && j + startCol < widget.headers.length; j++) {
+            _data[rowIndex][j + startCol] = pastedData[i][j];
+          }
+        }
+      });
+      
+      _showSnackBar('Data pasted successfully');
+    } catch (e) {
+      _showSnackBar('Error pasting data: $e');
+    }
+  }
+  
+  // 현재 데이터를 클립보드에 복사
+  Future<void> _copyToClipboard(int startRow, int startCol, int endRow, int endCol) async {
+    try {
+      // 범위 조정
+      endRow = endRow.clamp(0, _data.length - 1);
+      endCol = endCol.clamp(0, widget.headers.length - 1);
+      
+      final StringBuffer buffer = StringBuffer();
+      
+      for (int i = startRow; i <= endRow; i++) {
+        for (int j = startCol; j <= endCol; j++) {
+          buffer.write(_data[i][j]);
+          if (j < endCol) buffer.write('\t');
+        }
+        if (i < endRow) buffer.write('\n');
+      }
+      
+      await Clipboard.setData(ClipboardData(text: buffer.toString()));
+      _showSnackBar('Data copied to clipboard');
+    } catch (e) {
+      _showSnackBar('Error copying data: $e');
+    }
+  }
+  
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   @override
@@ -106,12 +160,23 @@ class _ExcelSheetPopupState extends State<ExcelSheetPopup> {
             
             // 안내 메시지
             Container(
-              padding: const EdgeInsets.all(8),
-              color: Colors.grey[200],
+              padding: const EdgeInsets.all(12),
+              color: Colors.blue.withOpacity(0.1),
               width: double.infinity,
-              child: const Text(
-                '엑셀에서 데이터를 복사하여(Ctrl+C) 아래 테이블에 붙여넣기(Ctrl+V)할 수 있습니다.',
-                textAlign: TextAlign.center,
+              child: Column(
+                children: const [
+                  Text(
+                    '엑셀에서 데이터를 복사하여(Ctrl+C) 아래 테이블에 붙여넣기(Ctrl+V)할 수 있습니다.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 14),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    '셀을 클릭하여 직접 편집하거나, 셀을 우클릭하여 메뉴를 사용할 수 있습니다.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 14),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 16),
@@ -124,11 +189,14 @@ class _ExcelSheetPopupState extends State<ExcelSheetPopup> {
                   width: 60,
                   height: 40,
                   padding: const EdgeInsets.all(8),
-                  color: Colors.grey[400],
+                  color: Colors.grey[700],
                   alignment: Alignment.center,
                   child: const Text(
                     'index',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
                 
@@ -137,11 +205,14 @@ class _ExcelSheetPopupState extends State<ExcelSheetPopup> {
                   child: Container(
                     height: 40,
                     padding: const EdgeInsets.all(8),
-                    color: Colors.grey[400],
+                    color: Colors.grey[700],
                     alignment: Alignment.center,
                     child: Text(
                       header,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 )),
@@ -154,13 +225,60 @@ class _ExcelSheetPopupState extends State<ExcelSheetPopup> {
                 child: Focus(
                   focusNode: _tableFocusNode,
                   onKeyEvent: (node, event) {
-                    // 키보드 이벤트 처리 로직 (Ctrl+V 처리 부분 수정)
-                    if (event is KeyDownEvent &&
-                        event.logicalKey == LogicalKeyboardKey.keyV &&
-                        HardwareKeyboard.instance.isControlPressed) {
-                      // 0, 0 위치에 붙여넣기 (실제로는 선택된 셀 위치를 사용해야 함)
-                      _pasteFromClipboard(0, 0);
-                      return KeyEventResult.handled;
+                    // 키보드 이벤트 처리 로직
+                    if (event is KeyDownEvent) {
+                      // Ctrl+V 처리
+                      if (event.logicalKey == LogicalKeyboardKey.keyV &&
+                          HardwareKeyboard.instance.isControlPressed) {
+                        _pasteFromClipboard(_selectedRow, _selectedCol);
+                        return KeyEventResult.handled;
+                      }
+                      
+                      // Ctrl+C 처리
+                      if (event.logicalKey == LogicalKeyboardKey.keyC &&
+                          HardwareKeyboard.instance.isControlPressed) {
+                        _copyToClipboard(_selectedRow, _selectedCol, _selectedRow, _selectedCol);
+                        return KeyEventResult.handled;
+                      }
+                      
+                      // 화살표 키 처리
+                      if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+                        setState(() {
+                          _selectedRow = (_selectedRow - 1).clamp(0, _data.length - 1);
+                        });
+                        return KeyEventResult.handled;
+                      }
+                      
+                      if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                        setState(() {
+                          _selectedRow = (_selectedRow + 1).clamp(0, _data.length - 1);
+                          // 필요한 경우 새 행 추가
+                          if (_selectedRow >= _data.length - 1) {
+                            _data.add(List.filled(widget.headers.length, ''));
+                          }
+                        });
+                        return KeyEventResult.handled;
+                      }
+                      
+                      if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+                        setState(() {
+                          _selectedCol = (_selectedCol - 1).clamp(0, widget.headers.length - 1);
+                        });
+                        return KeyEventResult.handled;
+                      }
+                      
+                      if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+                        setState(() {
+                          _selectedCol = (_selectedCol + 1).clamp(0, widget.headers.length - 1);
+                        });
+                        return KeyEventResult.handled;
+                      }
+                      
+                      // Enter 키 처리
+                      if (event.logicalKey == LogicalKeyboardKey.enter) {
+                        _showEditDialog(_selectedRow, _selectedCol);
+                        return KeyEventResult.handled;
+                      }
                     }
                     return KeyEventResult.ignored;
                   },
@@ -174,17 +292,33 @@ class _ExcelSheetPopupState extends State<ExcelSheetPopup> {
               ),
             ),
             
-            // 액션 버튼
+            // 액션 버튼들
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                TextButton(
+                // 행 추가 버튼
+                TextButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _data.add(List.filled(widget.headers.length, ''));
+                      _selectedRow = _data.length - 1;
+                    });
+                  },
+                  icon: const Icon(Icons.add),
+                  label: const Text('행 추가'),
+                ),
+                const SizedBox(width: 8),
+                
+                // 취소 버튼
+                OutlinedButton(
                   onPressed: () {
                     Navigator.pop(context);
                   },
-                  child: const Text('cancel'),
+                  child: const Text('Cancel'),
                 ),
                 const SizedBox(width: 8),
+                
+                // 저장 버튼
                 ElevatedButton(
                   onPressed: () {
                     // 빈 행 제거한 데이터 전달
@@ -194,7 +328,7 @@ class _ExcelSheetPopupState extends State<ExcelSheetPopup> {
                     widget.onSave(cleanedData);
                     Navigator.pop(context);
                   },
-                  child: const Text('save'),
+                  child: const Text('Save'),
                 ),
               ],
             ),
@@ -206,7 +340,7 @@ class _ExcelSheetPopupState extends State<ExcelSheetPopup> {
 
   Widget _buildDataRow(int rowIndex) {
     // 행이 홀수 인덱스인 경우 배경색 다르게 설정
-    final backgroundColor = rowIndex % 2 == 0 ? Colors.grey[200] : Colors.white;
+    final backgroundColor = rowIndex % 2 == 0 ? Colors.grey[100] : Colors.white;
     
     return Row(
       children: [
@@ -215,7 +349,7 @@ class _ExcelSheetPopupState extends State<ExcelSheetPopup> {
           width: 60,
           height: 40,
           padding: const EdgeInsets.all(8),
-          color: backgroundColor,
+          color: Colors.grey[300],
           alignment: Alignment.center,
           child: Text('${rowIndex + 1}'),
         ),
@@ -226,17 +360,32 @@ class _ExcelSheetPopupState extends State<ExcelSheetPopup> {
           (colIndex) => Expanded(
             child: InkWell(
               onTap: () {
-                // 셀 클릭 시 포커스 이동
+                // 셀 클릭 시 포커스 이동 및 셀 선택
+                setState(() {
+                  _selectedRow = rowIndex;
+                  _selectedCol = colIndex;
+                });
                 _showEditDialog(rowIndex, colIndex);
               },
               onSecondaryTap: () {
-                // 우클릭 시 붙여넣기 컨텍스트 메뉴 표시
+                // 우클릭 시 컨텍스트 메뉴 표시
+                setState(() {
+                  _selectedRow = rowIndex;
+                  _selectedCol = colIndex;
+                });
                 _showContextMenu(context, rowIndex, colIndex);
               },
               child: Container(
                 height: 40,
                 padding: const EdgeInsets.all(8),
-                color: backgroundColor,
+                decoration: BoxDecoration(
+                  color: _selectedRow == rowIndex && _selectedCol == colIndex
+                      ? Colors.blue.withOpacity(0.2)
+                      : backgroundColor,
+                  border: _selectedRow == rowIndex && _selectedCol == colIndex
+                      ? Border.all(color: Colors.blue, width: 2)
+                      : null,
+                ),
                 alignment: Alignment.centerLeft,
                 child: Text(
                   rowIndex < _data.length && colIndex < _data[rowIndex].length
@@ -253,16 +402,14 @@ class _ExcelSheetPopupState extends State<ExcelSheetPopup> {
   }
 
   void _showEditDialog(int rowIndex, int colIndex) {
-    if (rowIndex >= _data.length) {
-      while (rowIndex >= _data.length) {
-        _data.add(List.filled(widget.headers.length, ''));
-      }
+    // 데이터 행이 부족한 경우 추가
+    while (rowIndex >= _data.length) {
+      _data.add(List.filled(widget.headers.length, ''));
     }
     
-    if (colIndex >= _data[rowIndex].length) {
-      while (colIndex >= _data[rowIndex].length) {
-        _data[rowIndex].add('');
-      }
+    // 데이터 열이 부족한 경우 추가
+    while (colIndex >= _data[rowIndex].length) {
+      _data[rowIndex].add('');
     }
 
     final controller = TextEditingController(text: _data[rowIndex][colIndex]);
@@ -276,7 +423,9 @@ class _ExcelSheetPopupState extends State<ExcelSheetPopup> {
           autofocus: true,
           decoration: InputDecoration(
             hintText: 'Enter ${widget.headers[colIndex]}',
+            border: const OutlineInputBorder(),
           ),
+          maxLines: 5,  // 여러 줄 입력 가능하도록 수정
           onSubmitted: (value) {
             setState(() {
               _data[rowIndex][colIndex] = value;
@@ -319,12 +468,61 @@ class _ExcelSheetPopupState extends State<ExcelSheetPopup> {
       position: position,
       items: [
         PopupMenuItem(
+          value: 'copy',
+          child: const Text('복사'),
+          onTap: () {
+            // 메뉴가 닫힌 후 복사 실행
+            Future.delayed(const Duration(milliseconds: 100), () {
+              _copyToClipboard(rowIndex, colIndex, rowIndex, colIndex);
+            });
+          },
+        ),
+        PopupMenuItem(
           value: 'paste',
           child: const Text('붙여넣기'),
           onTap: () {
             // 메뉴가 닫힌 후 붙여넣기 실행
             Future.delayed(const Duration(milliseconds: 100), () {
               _pasteFromClipboard(rowIndex, colIndex);
+            });
+          },
+        ),
+        PopupMenuItem(
+          value: 'edit',
+          child: const Text('편집'),
+          onTap: () {
+            // 메뉴가 닫힌 후 편집 다이얼로그 표시
+            Future.delayed(const Duration(milliseconds: 100), () {
+              _showEditDialog(rowIndex, colIndex);
+            });
+          },
+        ),
+        PopupMenuItem(
+          value: 'insert_row',
+          child: const Text('행 삽입'),
+          onTap: () {
+            // 메뉴가 닫힌 후 행 삽입
+            Future.delayed(const Duration(milliseconds: 100), () {
+              setState(() {
+                _data.insert(rowIndex, List.filled(widget.headers.length, ''));
+              });
+            });
+          },
+        ),
+        PopupMenuItem(
+          value: 'delete_row',
+          child: const Text('행 삭제'),
+          onTap: () {
+            // 메뉴가 닫힌 후 행 삭제
+            Future.delayed(const Duration(milliseconds: 100), () {
+              if (_data.length > 1) {  // 최소 한 행은 유지
+                setState(() {
+                  _data.removeAt(rowIndex);
+                  _selectedRow = (_selectedRow - 1).clamp(0, _data.length - 1);
+                });
+              } else {
+                _showSnackBar('마지막 행은 삭제할 수 없습니다');
+              }
             });
           },
         ),
