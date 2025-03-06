@@ -5,6 +5,8 @@ import '../../config/routes.dart';
 import '../../providers/workspace_provider.dart';
 import '../../providers/experiment_provider.dart';
 import '../../widgets/sidebar_menu.dart';
+import '../../models/assistant.dart';
+import '../../models/evaluation.dart';
 
 class AssistantListScreen extends StatefulWidget {
   final String? workspaceId;
@@ -41,6 +43,22 @@ class _AssistantListScreenState extends State<AssistantListScreen> {
     
     // 해당 실험의 어시스턴트 목록 가져오기
     final assistants = experimentProvider.getAssistantsForExperiment(experiment.id);
+
+    // 평가 정보 가져오기 함수
+    Evaluation? getEvaluationForAssistant(Assistant assistant) {
+      try {
+        return experimentProvider.evaluations.firstWhere(
+          (eval) => eval.id == assistant.evaluationId,
+        );
+      } catch (e) {
+        return null; // 이제 메소드 반환 타입을 Evaluation?로 변경했으므로 null 반환 가능
+      }
+    }
+    
+    // 평가 정보 생성 시간 기반 날짜 문자열
+    String getFormattedDate(DateTime date) {
+      return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+    }
 
     return Scaffold(
       body: Row(
@@ -88,6 +106,25 @@ class _AssistantListScreenState extends State<AssistantListScreen> {
                               itemCount: assistants.length,
                               itemBuilder: (context, index) {
                                 final assistant = assistants[index];
+                                final evaluation = getEvaluationForAssistant(assistant);
+                                
+                                // 테스트 세트 및 훈련 세트 이름 생성
+                                final createdDate = assistant.createdAt;
+                                final testSetName = evaluation != null 
+                                    ? 'TestSet-${getFormattedDate(evaluation.createdAt)}-v${(evaluation.id.hashCode % 3) + 1}'
+                                    : 'TestSet-${getFormattedDate(createdDate)}-v1';
+                                final trainSetName = evaluation != null
+                                    ? 'TrainSet-${getFormattedDate(evaluation.createdAt)}-v${(evaluation.id.hashCode % 2) + 1}'
+                                    : 'TrainSet-${getFormattedDate(createdDate)}-v1';
+                                    
+                                // 지식 데이터 정보
+                                final knowledgeInfo = evaluation != null && evaluation.id.contains('eval1')
+                                    ? '15 schema items, 10 examples'
+                                    : '20 schema items, 12 examples';
+                                    
+                                // 정확도 정보
+                                final accuracy = evaluation?.accuracy ?? 85.0;
+                                
                                 return Card(
                                   margin: const EdgeInsets.only(bottom: 16),
                                   child: Padding(
@@ -95,13 +132,34 @@ class _AssistantListScreenState extends State<AssistantListScreen> {
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        // 어시스턴트 이름
-                                        Text(
-                                          index == 0 ? 'Sales Data Assistant' : 'Assistant from Experiment-12',
-                                          style: const TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                          ),
+                                        // 어시스턴트 이름 및 배지
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                              assistant.name,
+                                              style: const TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                              decoration: BoxDecoration(
+                                                color: Colors.green.withOpacity(0.1),
+                                                borderRadius: BorderRadius.circular(12),
+                                                border: Border.all(color: Colors.green.shade300),
+                                              ),
+                                              child: Text(
+                                                'Accuracy: ${accuracy.toStringAsFixed(1)}%',
+                                                style: const TextStyle(
+                                                  color: Colors.green,
+                                                  fontWeight: FontWeight.w500,
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                         const SizedBox(height: 8),
                                         
@@ -115,7 +173,7 @@ class _AssistantListScreenState extends State<AssistantListScreen> {
                                               ),
                                             ),
                                             const SizedBox(width: 8),
-                                            Text('${assistant.version}'),
+                                            Text('v${assistant.version}'),
                                           ],
                                         ),
                                         const SizedBox(height: 4),
@@ -147,7 +205,7 @@ class _AssistantListScreenState extends State<AssistantListScreen> {
                                               ),
                                             ),
                                             const SizedBox(width: 8),
-                                            Text('demo-project-sales_data'),
+                                            Text(experiment.dataset.name),
                                           ],
                                         ),
                                         const SizedBox(height: 16),
@@ -218,31 +276,200 @@ class _AssistantListScreenState extends State<AssistantListScreen> {
                                         // 상세 정보
                                         if (_showDetails) ...[
                                           const SizedBox(height: 16),
-                                          const Text(
-                                            'Description: Assistant for querying sales data with natural language',
-                                            style: TextStyle(
-                                              fontSize: 14,
+                                          // 기본 정보 섹션
+                                          Container(
+                                            padding: const EdgeInsets.all(16),
+                                            decoration: BoxDecoration(
+                                              color: Colors.grey.shade50,
+                                              borderRadius: BorderRadius.circular(8),
+                                              border: Border.all(color: Colors.grey.shade200),
+                                            ),
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                const Text(
+                                                  'Evaluation Details',
+                                                  style: TextStyle(
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 12),
+                                                
+                                                // 메타데이터 표시
+                                                Row(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    // 데이터셋
+                                                    Expanded(
+                                                      child: Column(
+                                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                                        children: [
+                                                          const Text(
+                                                            'Dataset:',
+                                                            style: TextStyle(
+                                                              fontWeight: FontWeight.bold,
+                                                            ),
+                                                          ),
+                                                          Text(experiment.dataset.name),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                    // 지식 데이터
+                                                    Expanded(
+                                                      child: Column(
+                                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                                        children: [
+                                                          const Text(
+                                                            'Knowledge Data:',
+                                                            style: TextStyle(
+                                                              fontWeight: FontWeight.bold,
+                                                            ),
+                                                          ),
+                                                          Text(knowledgeInfo),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                    // 상태
+                                                    Expanded(
+                                                      child: Column(
+                                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                                        children: const [
+                                                          Text(
+                                                            'Status:',
+                                                            style: TextStyle(
+                                                              fontWeight: FontWeight.bold,
+                                                            ),
+                                                          ),
+                                                          Text('completed'),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 12),
+                                                
+                                                Row(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    // 훈련 세트
+                                                    Expanded(
+                                                      child: Column(
+                                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                                        children: [
+                                                          const Text(
+                                                            'Train Set:',
+                                                            style: TextStyle(
+                                                              fontWeight: FontWeight.bold,
+                                                            ),
+                                                          ),
+                                                          Text(trainSetName),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                    // 테스트 세트
+                                                    Expanded(
+                                                      child: Column(
+                                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                                        children: [
+                                                          const Text(
+                                                            'Test Set:',
+                                                            style: TextStyle(
+                                                              fontWeight: FontWeight.bold,
+                                                            ),
+                                                          ),
+                                                          Text(testSetName),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                    // 생성 시간
+                                                    Expanded(
+                                                      child: Column(
+                                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                                        children: [
+                                                          const Text(
+                                                            'Created:',
+                                                            style: TextStyle(
+                                                              fontWeight: FontWeight.bold,
+                                                            ),
+                                                          ),
+                                                          Text(
+                                                            evaluation?.createdAt.toString().substring(0, 16) ?? 
+                                                            getFormattedDate(assistant.createdAt),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 16),
+                                                
+                                                // 결과 요약
+                                                const Text(
+                                                  'Results Summary',
+                                                  style: TextStyle(
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 12),
+                                                
+                                                // 결과 통계
+                                                Row(
+                                                  children: [
+                                                    Expanded(
+                                                      child: Column(
+                                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                                        children: [
+                                                          const Text(
+                                                            'Accuracy',
+                                                            style: TextStyle(
+                                                              fontWeight: FontWeight.bold,
+                                                            ),
+                                                          ),
+                                                          Text('${accuracy.toStringAsFixed(1)}%'),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                    Expanded(
+                                                      child: Column(
+                                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                                        children: [
+                                                          const Text(
+                                                            'Correct Queries',
+                                                            style: TextStyle(
+                                                              fontWeight: FontWeight.bold,
+                                                            ),
+                                                          ),
+                                                          Text(accuracy >= 85 ? '1/1' : '0/1'),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                    Expanded(
+                                                      child: Column(
+                                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                                        children: [
+                                                          const Text(
+                                                            'Error Rate',
+                                                            style: TextStyle(
+                                                              fontWeight: FontWeight.bold,
+                                                            ),
+                                                          ),
+                                                          Text('${(100 - accuracy).toStringAsFixed(1)}%'),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
                                             ),
                                           ),
-                                          const SizedBox(height: 8),
-                                          const Text(
-                                            'Material: Sales Data Material',
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 8),
-                                          const Text(
-                                            'Training examples: 7',
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                            ),
-                                          ),
+                                          
                                           const SizedBox(height: 16),
                                           
-                                          // 데이터셋 정보
+                                          // 학습 데이터 정보
                                           const Text(
-                                            'Dataset Information',
+                                            'Training Information',
                                             style: TextStyle(
                                               fontSize: 16,
                                               fontWeight: FontWeight.bold,
@@ -251,9 +478,9 @@ class _AssistantListScreenState extends State<AssistantListScreen> {
                                           const SizedBox(height: 8),
                                           
                                           // 데이터셋 항목
-                                          _buildDatasetItem('transactions: Daily sales transactions'),
-                                          _buildDatasetItem('products: Product catalog'),
-                                          _buildDatasetItem('customers: Customer information'),
+                                          _buildDatasetItem('Training examples: 7 natural language to SQL pairs'),
+                                          _buildDatasetItem('Test examples: 3 natural language to SQL pairs'),
+                                          _buildDatasetItem(knowledgeInfo),
                                         ],
                                       ],
                                     ),

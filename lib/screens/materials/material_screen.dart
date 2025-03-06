@@ -38,7 +38,10 @@ class _MaterialScreenState extends State<MaterialScreen> {
   List<List<String>> _knowledgeSetData = [];
   
   // 머티리얼 데이터
-  late MaterialModel _currentMaterial;
+  MaterialModel? _currentMaterial;
+  
+  // 생성 모드인지 여부
+  bool _isCreateMode = false;
   
   @override
   void initState() {
@@ -60,31 +63,42 @@ class _MaterialScreenState extends State<MaterialScreen> {
     // 해당 실험의 머티리얼 목록 가져오기
     final materials = experimentProvider.getMaterialsForExperiment(experiment.id);
     
-    if (materials.isNotEmpty) {
+    // 생성 모드 체크
+    _isCreateMode = materials.isEmpty;
+    
+    if (!_isCreateMode && materials.isNotEmpty) {
       _currentMaterial = materials[_selectedMaterialIndex];
       _datasetDescriptionController.text = "데이터셋 설명";  // 실제로는 머티리얼의 설명 필드 사용
       
       // 데이터 초기화
       _initializeData();
+    } else {
+      // 생성 모드일 때도 기본값으로 초기화
+      _datasetDescriptionController.text = "";
+      _trainSetData = [];
+      _testSetData = [];
+      _knowledgeSetData = [];
     }
   }
   
   // 데이터 초기화
   void _initializeData() {
+    if (_currentMaterial == null) return;
+    
     // 트레이닝 데이터 초기화
-    _trainSetData = _currentMaterial.trainSet.map((item) => [
+    _trainSetData = _currentMaterial!.trainSet.map((item) => [
       item.naturalLanguage, 
       item.sql,
     ]).toList();
     
     // 테스트 데이터 초기화
-    _testSetData = _currentMaterial.testSet.map((item) => [
+    _testSetData = _currentMaterial!.testSet.map((item) => [
       item.naturalLanguage, 
       item.sql,
     ]).toList();
     
     // 지식 데이터 초기화
-    _knowledgeSetData = _currentMaterial.knowledgeSet.map((item) => [
+    _knowledgeSetData = _currentMaterial!.knowledgeSet.map((item) => [
       item.naturalLanguage, 
       item.sql,
     ]).toList();
@@ -112,7 +126,7 @@ class _MaterialScreenState extends State<MaterialScreen> {
     // 해당 실험의 머티리얼 목록 가져오기
     final materials = experimentProvider.getMaterialsForExperiment(experiment.id);
     
-    if (materials.isEmpty) {
+    if (materials.isEmpty || _isCreateMode) {
       // 머티리얼이 없는 경우 생성 화면 표시
       return _buildCreateMaterialScreen(context, workspace.id, experiment.id, experimentProvider);
     }
@@ -147,7 +161,7 @@ class _MaterialScreenState extends State<MaterialScreen> {
                       // 평가 실행 버튼
                       ElevatedButton.icon(
                         onPressed: () {
-                          _runEvaluation(context, experimentProvider, experiment.id, _currentMaterial.id);
+                          _runEvaluation(context, experimentProvider, experiment.id, _currentMaterial!.id);
                         },
                         icon: const Icon(Icons.play_arrow),
                         label: const Text('Run Evaluation'),
@@ -258,7 +272,7 @@ class _MaterialScreenState extends State<MaterialScreen> {
                               title: 'Training Set',
                               description: 'Examples for model training',
                               buttonText: 'Edit Training Data',
-                              isEmpty: _currentMaterial.trainSet.isEmpty,
+                              isEmpty: _currentMaterial!.trainSet.isEmpty,
                               data: _trainSetData,
                               onEdit: () => _showExcelPopup(
                                 context, 
@@ -278,7 +292,7 @@ class _MaterialScreenState extends State<MaterialScreen> {
                               title: 'Test Set',
                               description: 'Examples for evaluation',
                               buttonText: 'Edit Test Data',
-                              isEmpty: _currentMaterial.testSet.isEmpty,
+                              isEmpty: _currentMaterial!.testSet.isEmpty,
                               data: _testSetData,
                               onEdit: () => _showExcelPopup(
                                 context, 
@@ -298,7 +312,7 @@ class _MaterialScreenState extends State<MaterialScreen> {
                               title: 'Knowledge',
                               description: 'Additional information for the model',
                               buttonText: 'Edit Knowledge Data',
-                              isEmpty: _currentMaterial.knowledgeSet.isEmpty,
+                              isEmpty: _currentMaterial!.knowledgeSet.isEmpty,
                               data: _knowledgeSetData,
                               onEdit: () => _showExcelPopup(
                                 context, 
@@ -501,12 +515,25 @@ class _MaterialScreenState extends State<MaterialScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // 헤더
-                  const Text(
-                    'Create Material',
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Create Material',
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      // 뒤로 가기 버튼
+                      TextButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        icon: const Icon(Icons.arrow_back),
+                        label: const Text('Back to Experiment'),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 24),
                   
@@ -589,62 +616,224 @@ class _MaterialScreenState extends State<MaterialScreen> {
                             const SizedBox(height: 20),
                             
                             // TrainSet
-                            _buildDataSection(
-                              title: 'Training Set',
-                              description: 'Examples for model training',
-                              buttonText: 'Add Training Data',
-                              isEmpty: _trainSetData.isEmpty,
-                              data: _trainSetData,
-                              onEdit: () => _showExcelPopup(
-                                context, 
-                                'Training Set', 
-                                ['Natural Language', 'SQL'], 
-                                _trainSetData,
-                                (data) {
-                                  setState(() {
-                                    _trainSetData = data;
-                                  });
-                                },
+                            Card(
+                              margin: const EdgeInsets.only(bottom: 20),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            const Text(
+                                              'Training Set',
+                                              style: TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            Text(
+                                              'Examples for model training',
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                color: Colors.grey[700],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        // 항상 보이는 편집 버튼 (생성 모드)
+                                        OutlinedButton.icon(
+                                          onPressed: () => _showExcelPopup(
+                                            context, 
+                                            'Training Set', 
+                                            ['Natural Language', 'SQL'], 
+                                            _trainSetData,
+                                            (data) {
+                                              setState(() {
+                                                _trainSetData = data;
+                                              });
+                                            },
+                                          ),
+                                          icon: const Icon(Icons.edit),
+                                          label: const Text('Add Training Data'),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 16),
+                                    
+                                    // 데이터 미리보기 또는 안내 메시지
+                                    _trainSetData.isEmpty
+                                        ? Container(
+                                            width: double.infinity,
+                                            padding: const EdgeInsets.all(16),
+                                            decoration: BoxDecoration(
+                                              color: Colors.grey.shade100,
+                                              borderRadius: BorderRadius.circular(4),
+                                            ),
+                                            alignment: Alignment.center,
+                                            child: const Text(
+                                              'No data yet. Click "Add Training Data" to add your training examples.',
+                                              style: TextStyle(
+                                                color: Colors.grey,
+                                                fontStyle: FontStyle.italic,
+                                              ),
+                                            ),
+                                          )
+                                        : _buildDataPreview(_trainSetData),
+                                  ],
+                                ),
                               ),
                             ),
                             
                             // TestSet
-                            _buildDataSection(
-                              title: 'Test Set',
-                              description: 'Examples for evaluation',
-                              buttonText: 'Add Test Data',
-                              isEmpty: _testSetData.isEmpty,
-                              data: _testSetData,
-                              onEdit: () => _showExcelPopup(
-                                context, 
-                                'Test Set', 
-                                ['Natural Language', 'SQL'], 
-                                _testSetData,
-                                (data) {
-                                  setState(() {
-                                    _testSetData = data;
-                                  });
-                                },
+                            Card(
+                              margin: const EdgeInsets.only(bottom: 20),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            const Text(
+                                              'Test Set',
+                                              style: TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            Text(
+                                              'Examples for evaluation',
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                color: Colors.grey[700],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        // 항상 보이는 편집 버튼 (생성 모드)
+                                        OutlinedButton.icon(
+                                          onPressed: () => _showExcelPopup(
+                                            context, 
+                                            'Test Set', 
+                                            ['Natural Language', 'SQL'], 
+                                            _testSetData,
+                                            (data) {
+                                              setState(() {
+                                                _testSetData = data;
+                                              });
+                                            },
+                                          ),
+                                          icon: const Icon(Icons.edit),
+                                          label: const Text('Add Test Data'),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 16),
+                                    
+                                    // 데이터 미리보기 또는 안내 메시지
+                                    _testSetData.isEmpty
+                                        ? Container(
+                                            width: double.infinity,
+                                            padding: const EdgeInsets.all(16),
+                                            decoration: BoxDecoration(
+                                              color: Colors.grey.shade100,
+                                              borderRadius: BorderRadius.circular(4),
+                                            ),
+                                            alignment: Alignment.center,
+                                            child: const Text(
+                                              'No data yet. Click "Add Test Data" to add your test examples.',
+                                              style: TextStyle(
+                                                color: Colors.grey,
+                                                fontStyle: FontStyle.italic,
+                                              ),
+                                            ),
+                                          )
+                                        : _buildDataPreview(_testSetData),
+                                  ],
+                                ),
                               ),
                             ),
                             
                             // Knowledge
-                            _buildDataSection(
-                              title: 'Knowledge',
-                              description: 'Additional information for the model',
-                              buttonText: 'Add Knowledge Data',
-                              isEmpty: _knowledgeSetData.isEmpty,
-                              data: _knowledgeSetData,
-                              onEdit: () => _showExcelPopup(
-                                context, 
-                                'Knowledge', 
-                                ['Key', 'Value'], 
-                                _knowledgeSetData,
-                                (data) {
-                                  setState(() {
-                                    _knowledgeSetData = data;
-                                  });
-                                },
+                            Card(
+                              margin: const EdgeInsets.only(bottom: 20),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            const Text(
+                                              'Knowledge',
+                                              style: TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            Text(
+                                              'Additional information for the model',
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                color: Colors.grey[700],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        // 항상 보이는 편집 버튼 (생성 모드)
+                                        OutlinedButton.icon(
+                                          onPressed: () => _showExcelPopup(
+                                            context, 
+                                            'Knowledge', 
+                                            ['Key', 'Value'], 
+                                            _knowledgeSetData,
+                                            (data) {
+                                              setState(() {
+                                                _knowledgeSetData = data;
+                                              });
+                                            },
+                                          ),
+                                          icon: const Icon(Icons.edit),
+                                          label: const Text('Add Knowledge Data'),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 16),
+                                    
+                                    // 데이터 미리보기 또는 안내 메시지
+                                    _knowledgeSetData.isEmpty
+                                        ? Container(
+                                            width: double.infinity,
+                                            padding: const EdgeInsets.all(16),
+                                            decoration: BoxDecoration(
+                                              color: Colors.grey.shade100,
+                                              borderRadius: BorderRadius.circular(4),
+                                            ),
+                                            alignment: Alignment.center,
+                                            child: const Text(
+                                              'No data yet. Click "Add Knowledge Data" to add your knowledge base.',
+                                              style: TextStyle(
+                                                color: Colors.grey,
+                                                fontStyle: FontStyle.italic,
+                                              ),
+                                            ),
+                                          )
+                                        : _buildDataPreview(_knowledgeSetData),
+                                  ],
+                                ),
                               ),
                             ),
                             
@@ -700,7 +889,7 @@ class _MaterialScreenState extends State<MaterialScreen> {
     );
   }
   
-  // Excel 시트 팝업 표시
+// Excel 시트 팝업 표시
   void _showExcelPopup(
     BuildContext context,
     String title,
@@ -777,6 +966,11 @@ class _MaterialScreenState extends State<MaterialScreen> {
           backgroundColor: Colors.green,
         ),
       );
+      
+      // 생성 모드 종료
+      setState(() {
+        _isCreateMode = false;
+      });
       
       // 머티리얼 목록 페이지로 이동
       Navigator.pushNamed(
