@@ -276,349 +276,349 @@ class _ChatScreenState extends State<ChatScreen> {
                                     ),
                                   ),
                                 ] else ...[
-                                                                  Container(
-                                                                    width: double.infinity,
-                                                                    padding: const EdgeInsets.symmetric(
-                                                                      horizontal: 12,
-                                                                      vertical: 8,
-                                                                    ),
-                                                                    decoration: BoxDecoration(
-                                                                      border: Border.all(color: Colors.grey.shade400),
-                                                                      borderRadius: BorderRadius.circular(4),
-                                                                      color: Colors.white,
-                                                                    ),
-                                                                    child: const Text('No assistants available'),
-                                                                  ),
-                                                                ],
-                                                                const SizedBox(height: 16),
-                                                                
-                                                                // 채팅 초기화 버튼
-                                                                Container(
-                                                                  width: double.infinity,
-                                                                  decoration: BoxDecoration(
-                                                                    color: Colors.white,
-                                                                    border: Border.all(color: Colors.grey.shade400),
-                                                                    borderRadius: BorderRadius.circular(4),
-                                                                  ),
-                                                                  child: TextButton(
-                                                                    onPressed: allAssistants.isNotEmpty ? () {
-                                                                      // 새 채팅 다이얼로그 표시
-                                                                      _showNewChatDialog(context, assistant.id, experiment.id);
-                                                                    } : null,
-                                                                    child: const Text('New Chat'),
-                                                                  ),
-                                                                ),
-                                                                const SizedBox(height: 16),
-                                                                
-                                                                // 채팅방 목록
-                                                                Expanded(
-                                                                  child: chats.isEmpty
-                                                                      ? const Center(
-                                                                          child: Text(
-                                                                            'No chats found. Start a new conversation.',
-                                                                            textAlign: TextAlign.center,
-                                                                            style: TextStyle(
-                                                                              color: Colors.grey,
-                                                                            ),
-                                                                          ),
-                                                                        )
-                                                                      : ListView.builder(
-                                                                          itemCount: chats.length,
-                                                                          itemBuilder: (context, index) {
-                                                                            final chat = chats[index];
-                                                                            return _buildChatRoomItem(
-                                                                              chat.name,
-                                                                              onTap: () {
-                                                                                setState(() {
-                                                                                  _selectedChatRoom = chat.name;
-                                                                                });
-                                                                                // 채팅 내용이 변경되면 스크롤을 아래로 이동
-                                                                                _scrollToBottom();
-                                                                              }
-                                                                            );
-                                                                          },
-                                                                        ),
-                                                                ),
-                                                              ],
-                                                            ),
-                                                          ),
-                                                          
-                                                          // 오른쪽 채팅 영역
-                                                          Expanded(
-                                                            child: Column(
-                                                              children: [
-                                                                // 채팅 메시지 영역
-                                                                Expanded(
-                                                                  child: currentMessages.isEmpty
-                                                                      ? const Center(
-                                                                          child: Text(
-                                                                            'No messages yet. Start a conversation!',
-                                                                            style: TextStyle(
-                                                                              color: Colors.grey,
-                                                                              fontSize: 16,
-                                                                            ),
-                                                                          ),
-                                                                        )
-                                                                      : Padding(
-                                                                          padding: const EdgeInsets.all(16.0),
-                                                                          child: ListView.builder(
-                                                                            controller: _scrollController,
-                                                                            itemCount: currentMessages.length,
-                                                                            itemBuilder: (context, index) {
-                                                                              final message = currentMessages[index];
-                                                                              return _buildMessageItem(message);
-                                                                            },
-                                                                          ),
-                                                                        ),
-                                                                ),
-                                                                
-                                                                // 메시지 입력 영역
-                                                                Container(
-                                                                  padding: const EdgeInsets.all(16),
-                                                                  decoration: BoxDecoration(
-                                                                    border: Border(
-                                                                      top: BorderSide(color: Colors.grey.shade300),
-                                                                    ),
-                                                                  ),
-                                                                  child: Row(
-                                                                    children: [
-                                                                      Expanded(
-                                                                        child: TextField(
-                                                                          controller: _messageController,
-                                                                          decoration: InputDecoration(
-                                                                            hintText: 'What is up?',
-                                                                            border: OutlineInputBorder(
-                                                                              borderRadius: BorderRadius.circular(24),
-                                                                            ),
-                                                                            contentPadding: const EdgeInsets.symmetric(
-                                                                              horizontal: 16,
-                                                                              vertical: 12,
-                                                                            ),
-                                                                          ),
-                                                                          onSubmitted: (value) {
-                                                                            if (allAssistants.isEmpty) {
-                                                                              _showNoAssistantsDialog(context);
-                                                                            } else if (chats.isNotEmpty) {
-                                                                              _sendMessage(context, experimentProvider, assistant.id);
-                                                                            } else {
-                                                                              _showNewChatDialog(context, assistant.id, experiment.id);
-                                                                            }
-                                                                          },
-                                                                        ),
-                                                                      ),
-                                                                      const SizedBox(width: 8),
-                                                                      IconButton(
-                                                                        onPressed: allAssistants.isEmpty ? null : () {
-                                                                          if (chats.isNotEmpty) {
-                                                                            _sendMessage(context, experimentProvider, assistant.id);
-                                                                          } else {
-                                                                            _showNewChatDialog(context, assistant.id, experiment.id);
-                                                                          }
-                                                                        },
-                                                                        icon: const Icon(Icons.send),
-                                                                        color: Colors.blue,
-                                                                      ),
-                                                                    ],
-                                                                  ),
-                                                                ),
-                                                              ],
-                                                            ),
-                                                          ),
-                                                        ],
+                                            Container(
+                                              width: double.infinity,
+                                              padding: const EdgeInsets.symmetric(
+                                                horizontal: 12,
+                                                vertical: 8,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                border: Border.all(color: Colors.grey.shade400),
+                                                borderRadius: BorderRadius.circular(4),
+                                                color: Colors.white,
+                                              ),
+                                              child: const Text('No assistants available'),
+                                            ),
+                                          ],
+                                          const SizedBox(height: 16),
+                                          
+                                          // 채팅 초기화 버튼
+                                          Container(
+                                            width: double.infinity,
+                                            decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              border: Border.all(color: Colors.grey.shade400),
+                                              borderRadius: BorderRadius.circular(4),
+                                            ),
+                                            child: TextButton(
+                                              onPressed: allAssistants.isNotEmpty ? () {
+                                                // 새 채팅 다이얼로그 표시
+                                                _showNewChatDialog(context, assistant.id, experiment.id);
+                                              } : null,
+                                              child: const Text('New Chat'),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 16),
+                                          
+                                          // 채팅방 목록
+                                          Expanded(
+                                            child: chats.isEmpty
+                                                ? const Center(
+                                                    child: Text(
+                                                      'No chats found. Start a new conversation.',
+                                                      textAlign: TextAlign.center,
+                                                      style: TextStyle(
+                                                        color: Colors.grey,
                                                       ),
                                                     ),
+                                                  )
+                                                : ListView.builder(
+                                                    itemCount: chats.length,
+                                                    itemBuilder: (context, index) {
+                                                      final chat = chats[index];
+                                                      return _buildChatRoomItem(
+                                                        chat.name,
+                                                        onTap: () {
+                                                          setState(() {
+                                                            _selectedChatRoom = chat.name;
+                                                          });
+                                                          // 채팅 내용이 변경되면 스크롤을 아래로 이동
+                                                          _scrollToBottom();
+                                                        }
+                                                      );
+                                                    },
                                                   ),
-                                                ],
-                                              ),
+                                                ),
+                                              ],
                                             ),
                                           ),
-                                        ],
-                                      ),
-                                    );
-                                  }
-                                  
-                                  // 어시스턴트가 없을 때 다이얼로그 표시
-                                  void _showNoAssistantsDialog(BuildContext context) {
-                                    showDialog(
-                                      context: context,
-                                      builder: (context) => AlertDialog(
-                                        title: const Text('No Assistants Available'),
-                                        content: const Text('Please create an assistant first by deploying an evaluation.'),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () => Navigator.pop(context),
-                                            child: const Text('OK'),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  }
-                                  
-                                  // 새 채팅방 생성 다이얼로그
-                                  void _showNewChatDialog(BuildContext context, String assistantId, String experimentId) {
-                                    showDialog(
-                                      context: context,
-                                      builder: (context) => AlertDialog(
-                                        title: const Text('New Chat'),
-                                        content: Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            TextField(
-                                              controller: _messageController,
-                                              decoration: const InputDecoration(
-                                                hintText: 'Enter your first message',
-                                              ),
-                                              maxLines: 3,
-                                            ),
-                                          ],
-                                        ),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () => Navigator.pop(context),
-                                            child: const Text('Cancel'),
-                                          ),
-                                          ElevatedButton(
-                                            onPressed: () {
-                                              if (_messageController.text.trim().isNotEmpty) {
-                                                final experimentProvider = Provider.of<ExperimentProvider>(context, listen: false);
-                                                experimentProvider.createChat(
-                                                  assistantId,
-                                                  experimentId,
-                                                  _messageController.text.trim(),
-                                                );
-                                                Navigator.pop(context);
-                                                setState(() {
-                                                  // 방금 생성한 채팅으로 선택
-                                                  final chats = experimentProvider.getChatsForAssistant(assistantId);
-                                                  if (chats.isNotEmpty) {
-                                                    _selectedChatRoom = chats.last.name;
-                                                  }
-                                                });
-                                                // 메시지 보낸 후 스크롤 아래로 이동
-                                                WidgetsBinding.instance.addPostFrameCallback((_) {
-                                                  _scrollToBottom();
-                                                });
-                                              }
-                                            },
-                                            child: const Text('Create'),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  }
-                                  
-                                  // 채팅방 아이템 위젯
-                                  Widget _buildChatRoomItem(String name, {required VoidCallback onTap}) {
-                                    final isSelected = name == _selectedChatRoom;
-                                    
-                                    return Container(
-                                      margin: const EdgeInsets.only(bottom: 8),
-                                      decoration: BoxDecoration(
-                                        border: Border.all(
-                                          color: isSelected ? Colors.blue : Colors.grey.shade400,
-                                        ),
-                                        borderRadius: BorderRadius.circular(4),
-                                        color: isSelected ? Colors.blue.withOpacity(0.1) : Colors.white,
-                                      ),
-                                      child: ListTile(
-                                        title: Text(
-                                          name,
-                                          style: TextStyle(
-                                            color: isSelected ? Colors.blue : Colors.black,
-                                          ),
-                                        ),
-                                        onTap: onTap,
-                                      ),
-                                    );
-                                  }
-                                  
-                                  // 메시지 아이템 위젯
-                                  Widget _buildMessageItem(ChatMessage message) {
-                                    return Container(
-                                      margin: const EdgeInsets.symmetric(vertical: 8),
-                                      child: Row(
-                                        mainAxisAlignment: message.isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          if (!message.isUser) ...[
-                                            CircleAvatar(
-                                              backgroundColor: Colors.blue.shade200,
-                                              child: const Icon(Icons.smart_toy, color: Colors.white),
-                                            ),
-                                            const SizedBox(width: 8),
-                                          ],
-                                          Flexible(
-                                            child: Container(
-                                              padding: const EdgeInsets.all(12),
-                                              decoration: BoxDecoration(
-                                                color: message.isUser ? Colors.blue.shade100 : Colors.grey.shade200,
-                                                borderRadius: BorderRadius.circular(12),
-                                              ),
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    message.isUser ? 'You' : 'Assistant',
-                                                    style: const TextStyle(
-                                                      fontWeight: FontWeight.bold,
-                                                    ),
+                                          
+                                          // 오른쪽 채팅 영역
+                                          Expanded(
+                                            child: Column(
+                                              children: [
+                                                // 채팅 메시지 영역
+                                                Expanded(
+                                                  child: currentMessages.isEmpty
+                                                      ? const Center(
+                                                          child: Text(
+                                                            'No messages yet. Start a conversation!',
+                                                            style: TextStyle(
+                                                              color: Colors.grey,
+                                                              fontSize: 16,
+                                                            ),
+                                                          ),
+                                                        )
+                                                      : Padding(
+                                                          padding: const EdgeInsets.all(16.0),
+                                                          child: ListView.builder(
+                                                            controller: _scrollController,
+                                                            itemCount: currentMessages.length,
+                                                            itemBuilder: (context, index) {
+                                                              final message = currentMessages[index];
+                                                              return _buildMessageItem(message);
+                                                            },
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      
+                                                      // 메시지 입력 영역
+                                                      Container(
+                                                        padding: const EdgeInsets.all(16),
+                                                        decoration: BoxDecoration(
+                                                          border: Border(
+                                                            top: BorderSide(color: Colors.grey.shade300),
+                                                          ),
+                                                        ),
+                                                        child: Row(
+                                                          children: [
+                                                            Expanded(
+                                                              child: TextField(
+                                                                controller: _messageController,
+                                                                decoration: InputDecoration(
+                                                                  hintText: 'What is up?',
+                                                                  border: OutlineInputBorder(
+                                                                    borderRadius: BorderRadius.circular(24),
+                                                                  ),
+                                                                  contentPadding: const EdgeInsets.symmetric(
+                                                                    horizontal: 16,
+                                                                    vertical: 12,
+                                                                  ),
+                                                                ),
+                                                                onSubmitted: (value) {
+                                                                  if (allAssistants.isEmpty) {
+                                                                    _showNoAssistantsDialog(context);
+                                                                  } else if (chats.isNotEmpty) {
+                                                                    _sendMessage(context, experimentProvider, assistant.id);
+                                                                  } else {
+                                                                    _showNewChatDialog(context, assistant.id, experiment.id);
+                                                                  }
+                                                                },
+                                                              ),
+                                                            ),
+                                                            const SizedBox(width: 8),
+                                                            IconButton(
+                                                              onPressed: allAssistants.isEmpty ? null : () {
+                                                                if (chats.isNotEmpty) {
+                                                                  _sendMessage(context, experimentProvider, assistant.id);
+                                                                } else {
+                                                                  _showNewChatDialog(context, assistant.id, experiment.id);
+                                                                }
+                                                              },
+                                                              icon: const Icon(Icons.send),
+                                                              color: Colors.blue,
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ],
                                                   ),
-                                                  const SizedBox(height: 4),
-                                                  Text(message.content),
-                                                ],
-                                              ),
+                                                ),
+                                              ],
                                             ),
                                           ),
-                                          if (message.isUser) ...[
-                                            const SizedBox(width: 8),
-                                            CircleAvatar(
-                                              backgroundColor: Colors.blue.shade500,
-                                              child: const Icon(Icons.person, color: Colors.white),
-                                            ),
-                                          ],
-                                        ],
-                                      ),
-                                    );
-                                  }
-                                  
-                                  // 메시지 전송
-                                  void _sendMessage(
-                                    BuildContext context,
-                                    ExperimentProvider experimentProvider,
-                                    String assistantId,
-                                  ) {
-                                    if (_messageController.text.trim().isEmpty) return;
-                                    
-                                    final content = _messageController.text.trim();
-                                    _messageController.clear();
-                                    
-                                    // 채팅 존재 여부 확인
-                                    final chats = experimentProvider.getChatsForAssistant(assistantId);
-                                    
-                                    if (chats.isEmpty || !chats.any((c) => c.name == _selectedChatRoom)) {
-                                      // 새 채팅 생성
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+                        
+                        // 어시스턴트가 없을 때 다이얼로그 표시
+                        void _showNoAssistantsDialog(BuildContext context) {
+                          showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('No Assistants Available'),
+                              content: const Text('Please create an assistant first by deploying an evaluation.'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text('OK'),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+                        
+                        // 새 채팅방 생성 다이얼로그
+                        void _showNewChatDialog(BuildContext context, String assistantId, String experimentId) {
+                          showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('New Chat'),
+                              content: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  TextField(
+                                    controller: _messageController,
+                                    decoration: const InputDecoration(
+                                      hintText: 'Enter your first message',
+                                    ),
+                                    maxLines: 3,
+                                  ),
+                                ],
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text('Cancel'),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    if (_messageController.text.trim().isNotEmpty) {
+                                      final experimentProvider = Provider.of<ExperimentProvider>(context, listen: false);
                                       experimentProvider.createChat(
                                         assistantId,
-                                        experimentProvider.selectedExperiment!.id,
-                                        content,
+                                        experimentId,
+                                        _messageController.text.trim(),
                                       );
-                                      
-                                      // 새로 생성된 채팅으로 선택 변경
+                                      Navigator.pop(context);
                                       setState(() {
-                                        final updatedChats = experimentProvider.getChatsForAssistant(assistantId);
-                                        if (updatedChats.isNotEmpty) {
-                                          _selectedChatRoom = updatedChats.last.name;
+                                        // 방금 생성한 채팅으로 선택
+                                        final chats = experimentProvider.getChatsForAssistant(assistantId);
+                                        if (chats.isNotEmpty) {
+                                          _selectedChatRoom = chats.last.name;
                                         }
                                       });
-                                    } else {
-                                      // 메시지 전송
-                                      final chat = chats.firstWhere((c) => c.name == _selectedChatRoom);
-                                      experimentProvider.sendMessage(chat.id, content);
+                                      // 메시지 보낸 후 스크롤 아래로 이동
+                                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                                        _scrollToBottom();
+                                      });
                                     }
-                                    
-                                    // 메시지 보낸 후 스크롤 맨 아래로 이동
-                                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                                      _scrollToBottom();
-                                    });
-                                  }
-                                }
+                                  },
+                                  child: const Text('Create'),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+                        
+                        // 채팅방 아이템 위젯
+                        Widget _buildChatRoomItem(String name, {required VoidCallback onTap}) {
+                          final isSelected = name == _selectedChatRoom;
+                          
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: isSelected ? Colors.blue : Colors.grey.shade400,
+                              ),
+                              borderRadius: BorderRadius.circular(4),
+                              color: isSelected ? Colors.blue.withOpacity(0.1) : Colors.white,
+                            ),
+                            child: ListTile(
+                              title: Text(
+                                name,
+                                style: TextStyle(
+                                  color: isSelected ? Colors.blue : Colors.black,
+                                ),
+                              ),
+                              onTap: onTap,
+                            ),
+                          );
+                        }
+                        
+                        // 메시지 아이템 위젯
+                        Widget _buildMessageItem(ChatMessage message) {
+                          return Container(
+                            margin: const EdgeInsets.symmetric(vertical: 8),
+                            child: Row(
+                              mainAxisAlignment: message.isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (!message.isUser) ...[
+                                  CircleAvatar(
+                                    backgroundColor: Colors.blue.shade200,
+                                    child: const Icon(Icons.smart_toy, color: Colors.white),
+                                  ),
+                                  const SizedBox(width: 8),
+                                ],
+                                Flexible(
+                                  child: Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: message.isUser ? Colors.blue.shade100 : Colors.grey.shade200,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          message.isUser ? 'You' : 'Assistant',
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(message.content),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                if (message.isUser) ...[
+                                  const SizedBox(width: 8),
+                                  CircleAvatar(
+                                    backgroundColor: Colors.blue.shade500,
+                                    child: const Icon(Icons.person, color: Colors.white),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          );
+                        }
+                        
+                        // 메시지 전송
+                        void _sendMessage(
+                          BuildContext context,
+                          ExperimentProvider experimentProvider,
+                          String assistantId,
+                        ) {
+                          if (_messageController.text.trim().isEmpty) return;
+                          
+                          final content = _messageController.text.trim();
+                          _messageController.clear();
+                          
+                          // 채팅 존재 여부 확인
+                          final chats = experimentProvider.getChatsForAssistant(assistantId);
+                          
+                          if (chats.isEmpty || !chats.any((c) => c.name == _selectedChatRoom)) {
+                            // 새 채팅 생성
+                            experimentProvider.createChat(
+                              assistantId,
+                              experimentProvider.selectedExperiment!.id,
+                              content,
+                            );
+                            
+                            // 새로 생성된 채팅으로 선택 변경
+                            setState(() {
+                              final updatedChats = experimentProvider.getChatsForAssistant(assistantId);
+                              if (updatedChats.isNotEmpty) {
+                                _selectedChatRoom = updatedChats.last.name;
+                              }
+                            });
+                          } else {
+                            // 메시지 전송
+                            final chat = chats.firstWhere((c) => c.name == _selectedChatRoom);
+                            experimentProvider.sendMessage(chat.id, content);
+                          }
+                          
+                          // 메시지 보낸 후 스크롤 맨 아래로 이동
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            _scrollToBottom();
+                          });
+                        }
+                      }

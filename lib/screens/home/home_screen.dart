@@ -9,6 +9,8 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final workspaceProvider = Provider.of<WorkspaceProvider>(context);
+    // 직접 selectedWorkspace != null을 확인하는 방식으로 변경
+    final hasWorkspace = workspaceProvider.selectedWorkspace != null;
     
     return Scaffold(
       body: Center(
@@ -27,14 +29,28 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 24),
-              Text(
-                'You are working in.. ${workspaceProvider.selectedWorkspace?.name ?? '{workspace_name}'}',
-                style: const TextStyle(
-                  fontSize: 18,
-                  color: Colors.black54,
+              
+              // 워크스페이스 정보를 보여주는 텍스트
+              InkWell(
+                onTap: hasWorkspace ? () {
+                  Navigator.pushNamed(
+                    context, 
+                    AppRoutes.workspaceDetail,
+                    arguments: {'workspaceId': workspaceProvider.selectedWorkspace!.id},
+                  );
+                } : null,
+                child: Text(
+                  'You are working in.. ${workspaceProvider.selectedWorkspace?.name ?? '{workspace_name}'}',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: hasWorkspace ? Colors.blue : Colors.black54,
+                    decoration: hasWorkspace ? TextDecoration.underline : TextDecoration.none,
+                  ),
                 ),
               ),
               const SizedBox(height: 32),
+              
+              // 워크스페이스 버튼
               SizedBox(
                 width: 300,
                 height: 50,
@@ -42,9 +58,9 @@ class HomeScreen extends StatelessWidget {
                   onPressed: () {
                     Navigator.pushNamed(context, AppRoutes.workspaceList);
                   },
-                  child: const Text(
-                    'Create workspace',
-                    style: TextStyle(fontSize: 18),
+                  child: Text(
+                    hasWorkspace ? 'Go to Workspaces' : 'Create Workspace',
+                    style: const TextStyle(fontSize: 18),
                   ),
                 ),
               ),

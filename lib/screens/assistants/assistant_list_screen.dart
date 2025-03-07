@@ -1,4 +1,3 @@
-// lib/screens/assistants/assistant_list_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../config/routes.dart';
@@ -7,65 +6,72 @@ import '../../providers/experiment_provider.dart';
 import '../../widgets/sidebar_menu.dart';
 import '../../models/assistant.dart';
 import '../../models/evaluation.dart';
-
 class AssistantListScreen extends StatefulWidget {
   final String? workspaceId;
   final String? experimentId;
-  
   const AssistantListScreen({
-    Key? key, 
-    this.workspaceId, 
+    Key? key,
+    this.workspaceId,
     this.experimentId,
   }) : super(key: key);
-
   @override
   State<AssistantListScreen> createState() => _AssistantListScreenState();
 }
-
 class _AssistantListScreenState extends State<AssistantListScreen> {
   // 선택된 버전
   String _selectedVersion = 'v1';
   // 상세 정보 표시 여부
   bool _showDetails = false;
-  
+  // 명시적으로 필드 정의
+  final Map<String, List<Assistant>> _assistantsByName = {};
+  final List<String> _assistantNames = [];
   @override
   Widget build(BuildContext context) {
     final workspaceProvider = Provider.of<WorkspaceProvider>(context);
     final experimentProvider = Provider.of<ExperimentProvider>(context);
-    
     // 현재 워크스페이스 정보 가져오기
-    final workspace = workspaceProvider.selectedWorkspace ?? 
+    final workspace = workspaceProvider.selectedWorkspace ??
         workspaceProvider.workspaces.firstWhere((ws) => ws.id == widget.workspaceId);
-    
     // 현재 실험 정보 가져오기
-    final experiment = experimentProvider.selectedExperiment ?? 
+    final experiment = experimentProvider.selectedExperiment ??
         experimentProvider.experiments.firstWhere((exp) => exp.id == widget.experimentId);
-    
     // 해당 실험의 어시스턴트 목록 가져오기
-    final assistants = experimentProvider.getAssistantsForExperiment(experiment.id);
-
-    // 평가 정보 가져오기 함수
+    final allAssistants = experimentProvider.getAssistantsForExperiment(experiment.id);
+    // 평가 정보 가져오기 함수 - null 반환 문제 수정
     Evaluation? getEvaluationForAssistant(Assistant assistant) {
       try {
         return experimentProvider.evaluations.firstWhere(
           (eval) => eval.id == assistant.evaluationId,
         );
       } catch (e) {
-        return null; // 이제 메소드 반환 타입을 Evaluation?로 변경했으므로 null 반환 가능
+        // 찾지 못한 경우 null 반환
+        return null;
       }
     }
-    
+    // 어시스턴트별로 버전을 그룹화
+    _assistantsByName.clear(); // 기존 데이터 초기화
+    for (var assist in allAssistants) {
+      if (!_assistantsByName.containsKey(assist.name)) {
+        _assistantsByName[assist.name] = [];
+      }
+      _assistantsByName[assist.name]!.add(assist);
+    }
+    // 버전별로 정렬
+    for (var assists in _assistantsByName.values) {
+      assists.sort((a, b) => b.version.compareTo(a.version)); // 버전 내림차순 정렬
+    }
+    // 선택 가능한 어시스턴트 이름 목록 - 이름 목록만 추출
+    _assistantNames.clear(); // 기존 데이터 초기화
+    _assistantNames.addAll(_assistantsByName.keys.toList());
     // 평가 정보 생성 시간 기반 날짜 문자열
     String getFormattedDate(DateTime date) {
       return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
     }
-
     return Scaffold(
       body: Row(
         children: [
           // 사이드바 메뉴
           const SidebarMenu(),
-          
           // 메인 콘텐츠
           Expanded(
             child: Padding(
@@ -82,7 +88,6 @@ class _AssistantListScreenState extends State<AssistantListScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  
                   // 메인 컨텐츠
                   Expanded(
                     child: Container(
@@ -92,7 +97,7 @@ class _AssistantListScreenState extends State<AssistantListScreen> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       padding: const EdgeInsets.all(20),
-                      child: assistants.isEmpty
+                      child: _assistantNames.isEmpty
                           ? const Center(
                               child: Text(
                                 'No assistants found. Deploy an evaluation as an assistant first.',
@@ -103,28 +108,31 @@ class _AssistantListScreenState extends State<AssistantListScreen> {
                               ),
                             )
                           : ListView.builder(
-                              itemCount: assistants.length,
+                              itemCount: _assistantNames.length,
                               itemBuilder: (context, index) {
-                                final assistant = assistants[index];
-                                final evaluation = getEvaluationForAssistant(assistant);
-                                
+                                final assistantName = _assistantNames[index];
+                                final versions = _assistantsByName[assistantName]!;
+                                final latestAssistant = versions.first; // 가장 최신 버전
+                                final evaluation = getEvaluationForAssistant(latestAssistant);
                                 // 테스트 세트 및 훈련 세트 이름 생성
-                                final createdDate = assistant.createdAt;
-                                final testSetName = evaluation != null 
-                                    ? 'TestSet-${getFormattedDate(evaluation.createdAt)}-v${(evaluation.id.hashCode % 3) + 1}'
-                                    : 'TestSet-${getFormattedDate(createdDate)}-v1';
+                                final createdDate = latestAssistant.createdAt;
+                                String formattedCreatedDate = '';
+                                if (createdDate != null) {
+                                  formattedCreatedDate = '${createdDate.year}-${createdDate.month.toString().padLeft(2, '0')}-${createdDate.day.toString().padLeft(2, '0')}';
+                                }
+                                
+                                final testSetName = evaluation != null
+                                    ? 'TestSet-${formattedCreatedDate}-v${(evaluation.id.hashCode % 3) + 1}'
+                                    : 'TestSet-${formattedCreatedDate}-v1';
                                 final trainSetName = evaluation != null
-                                    ? 'TrainSet-${getFormattedDate(evaluation.createdAt)}-v${(evaluation.id.hashCode % 2) + 1}'
-                                    : 'TrainSet-${getFormattedDate(createdDate)}-v1';
-                                    
+                                    ? 'TrainSet-${formattedCreatedDate}-v${(evaluation.id.hashCode % 2) + 1}'
+                                    : 'TrainSet-${formattedCreatedDate}-v1';
                                 // 지식 데이터 정보
                                 final knowledgeInfo = evaluation != null && evaluation.id.contains('eval1')
                                     ? '15 schema items, 10 examples'
                                     : '20 schema items, 12 examples';
-                                    
                                 // 정확도 정보
                                 final accuracy = evaluation?.accuracy ?? 85.0;
-                                
                                 return Card(
                                   margin: const EdgeInsets.only(bottom: 16),
                                   child: Padding(
@@ -137,7 +145,7 @@ class _AssistantListScreenState extends State<AssistantListScreen> {
                                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                           children: [
                                             Text(
-                                              assistant.name,
+                                              assistantName,
                                               style: const TextStyle(
                                                 fontSize: 18,
                                                 fontWeight: FontWeight.bold,
@@ -162,22 +170,42 @@ class _AssistantListScreenState extends State<AssistantListScreen> {
                                           ],
                                         ),
                                         const SizedBox(height: 8),
-                                        
                                         // 버전 정보
                                         Row(
                                           children: [
                                             const Text(
-                                              'Version:',
+                                              'Available Versions:',
                                               style: TextStyle(
                                                 fontWeight: FontWeight.w500,
                                               ),
                                             ),
                                             const SizedBox(width: 8),
-                                            Text('v${assistant.version}'),
+                                            Expanded(
+                                              child: SingleChildScrollView(
+                                                scrollDirection: Axis.horizontal,
+                                                child: Row(
+                                                  children: versions.map((assistantVersion) =>
+                                                    Padding(
+                                                      padding: const EdgeInsets.only(right: 8.0),
+                                                      child: ChoiceChip(
+                                                        label: Text('v${assistantVersion.version}'),
+                                                        selected: 'v${assistantVersion.version}' == _selectedVersion,
+                                                        onSelected: (selected) {
+                                                          if (selected) {
+                                                            setState(() {
+                                                              _selectedVersion = 'v${assistantVersion.version}';
+                                                            });
+                                                          }
+                                                        },
+                                                      ),
+                                                    )
+                                                  ).toList(),
+                                                ),
+                                              ),
+                                            ),
                                           ],
                                         ),
                                         const SizedBox(height: 4),
-                                        
                                         // 생성 시간
                                         Row(
                                           children: [
@@ -189,18 +217,17 @@ class _AssistantListScreenState extends State<AssistantListScreen> {
                                             ),
                                             const SizedBox(width: 8),
                                             Text(
-                                              assistant.createdAt.toString().substring(0, 16),
+                                              latestAssistant.createdAt.toString().substring(0, 16),
                                             ),
                                           ],
                                         ),
                                         const SizedBox(height: 4),
-                                        
                                         // 데이터셋 정보
                                         Row(
                                           children: [
                                             const Text(
                                               'Dataset:',
-                                              style: TextStyle(
+                                              style: TextStyle(                           
                                                 fontWeight: FontWeight.w500,
                                               ),
                                             ),
@@ -209,46 +236,20 @@ class _AssistantListScreenState extends State<AssistantListScreen> {
                                           ],
                                         ),
                                         const SizedBox(height: 16),
-                                        
-                                        // 버전 선택
-                                        Row(
-                                          children: [
-                                            const Text(
-                                              'Select version',
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                            const SizedBox(width: 8),
-                                            DropdownButton<String>(
-                                              value: _selectedVersion,
-                                              items: const [
-                                                DropdownMenuItem(
-                                                  value: 'v1',
-                                                  child: Text('v1'),
-                                                ),
-                                              ],
-                                              onChanged: (value) {
-                                                if (value != null) {
-                                                  setState(() {
-                                                    _selectedVersion = value;
-                                                  });
-                                                }
-                                              },
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 16),
-                                        
                                         // 채팅 시작 버튼
                                         ElevatedButton(
                                           onPressed: () {
-                                            _startChat(context, assistant, experiment);
+                                            // 선택된 버전에 해당하는 어시스턴트 찾기
+                                            final versionNum = int.parse(_selectedVersion.substring(1));
+                                            final selectedAssistant = versions.firstWhere(
+                                              (a) => a.version == versionNum,
+                                              orElse: () => versions.first,
+                                            );
+                                            _startChat(context, selectedAssistant, experiment);
                                           },
                                           child: const Text('Chat with Assistant'),
                                         ),
                                         const SizedBox(height: 16),
-                                        
                                         // 상세 정보 토글
                                         InkWell(
                                           onTap: () {
@@ -272,7 +273,6 @@ class _AssistantListScreenState extends State<AssistantListScreen> {
                                             ],
                                           ),
                                         ),
-                                        
                                         // 상세 정보
                                         if (_showDetails) ...[
                                           const SizedBox(height: 16),
@@ -395,7 +395,7 @@ class _AssistantListScreenState extends State<AssistantListScreen> {
                                                           ),
                                                           Text(
                                                             evaluation?.createdAt.toString().substring(0, 16) ?? 
-                                                            getFormattedDate(assistant.createdAt),
+                                                            getFormattedDate(latestAssistant.createdAt),
                                                           ),
                                                         ],
                                                       ),
@@ -476,7 +476,6 @@ class _AssistantListScreenState extends State<AssistantListScreen> {
                                             ),
                                           ),
                                           const SizedBox(height: 8),
-                                          
                                           // 데이터셋 항목
                                           _buildDatasetItem('Training examples: 7 natural language to SQL pairs'),
                                           _buildDatasetItem('Test examples: 3 natural language to SQL pairs'),
@@ -498,7 +497,6 @@ class _AssistantListScreenState extends State<AssistantListScreen> {
       ),
     );
   }
-  
   // 데이터셋 항목 위젯
   Widget _buildDatasetItem(String text) {
     return Padding(
@@ -516,15 +514,14 @@ class _AssistantListScreenState extends State<AssistantListScreen> {
       ),
     );
   }
-  
   // 채팅 시작
   void _startChat(
     BuildContext context,
-    dynamic assistant,
+    Assistant assistant,
     dynamic experiment,
   ) {
     Navigator.pushNamed(
-      context, 
+      context,
       AppRoutes.chatList,
       arguments: {
         'workspaceId': widget.workspaceId,

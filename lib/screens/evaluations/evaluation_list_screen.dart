@@ -104,16 +104,25 @@ class _EvaluationListScreenState extends State<EvaluationListScreen> {
         : evaluationsByTestSet[_selectedTestSet] ?? [];
     
     // 실험 데이터 구성 (평가에서 추출)
-    final List<Map<String, dynamic>> experimentData = filteredEvaluations.map((eval) => {
-      'name': isWorkspaceA 
-          ? (eval.id == 'eval1' ? 'Experiment 11' : 'Experiment 12')
-          : experiment.name,
-      'dataset': isWorkspaceA 
-          ? (eval.id == 'eval1' ? 'my-gcp-dataset-sales_table' : 'demo-project-sales_data')
-          : experiment.dataset.name,
-      'testSet': testSetNames[eval.id] ?? 'Unknown',
-      'accuracy': eval.accuracy,
-      'id': eval.id,
+    final List<Map<String, dynamic>> experimentData = filteredEvaluations.map((eval) {
+      // var로 선언하여 타입 추론을 사용
+      var relatedExperiment = experiment; // 기본값으로 현재 실험 설정
+      
+      // 오류를 방지하기 위해 try-catch 없이 간단하게 구현
+      for (var exp in experimentProvider.experiments) {
+        if (exp.id == eval.experimentId) {
+          relatedExperiment = exp;
+          break;
+        }
+      }
+      
+      return {
+        'name': relatedExperiment.name,
+        'dataset': relatedExperiment.dataset.name,
+        'testSet': testSetNames[eval.id] ?? 'Unknown',
+        'accuracy': eval.accuracy,
+        'id': eval.id,
+      };
     }).toList();
     
     // 그래프용 데이터 생성
