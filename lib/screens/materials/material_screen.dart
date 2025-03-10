@@ -1,6 +1,7 @@
 // lib/screens/materials/material_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../models/experiment.dart';
 import '../../models/material_model.dart';
 import '../../config/routes.dart';
 import '../../providers/workspace_provider.dart';
@@ -24,7 +25,9 @@ class MaterialScreen extends StatefulWidget {
 
 class _MaterialScreenState extends State<MaterialScreen> {
   // 폼 컨트롤러
-  final _datasetDescriptionController = TextEditingController();
+  final _datasetNameController = TextEditingController();
+  final _tablesController = TextEditingController();
+  final _columnsController = TextEditingController();
   
   // 현재 편집 모드인지 여부
   bool _isEditMode = false;
@@ -43,6 +46,8 @@ class _MaterialScreenState extends State<MaterialScreen> {
   // 생성 모드인지 여부
   bool _isCreateMode = false;
   
+  late Experiment _currentExperiment;
+
   @override
   void initState() {
     super.initState();
@@ -57,30 +62,39 @@ class _MaterialScreenState extends State<MaterialScreen> {
     final experimentProvider = Provider.of<ExperimentProvider>(context, listen: false);
     
     // 현재 실험 정보 가져오기
-    final experiment = experimentProvider.selectedExperiment ?? 
+    _currentExperiment = experimentProvider.selectedExperiment ?? 
         experimentProvider.experiments.firstWhere((exp) => exp.id == widget.experimentId);
     
     // 해당 실험의 머티리얼 목록 가져오기
-    final materials = experimentProvider.getMaterialsForExperiment(experiment.id);
+    final materials = experimentProvider.getMaterialsForExperiment(_currentExperiment.id);
     
     // 생성 모드 체크
     _isCreateMode = materials.isEmpty;
     
     if (!_isCreateMode && materials.isNotEmpty) {
       _currentMaterial = materials[_selectedMaterialIndex];
-      _datasetDescriptionController.text = "데이터셋 설명";  // 실제로는 머티리얼의 설명 필드 사용
+      
+      // 데이터셋 관련 컨트롤러 초기화
+      _datasetNameController.text = _currentExperiment.dataset.name;
+      _tablesController.text = _currentExperiment.dataset.tables.join(', ');
+      _columnsController.text = "customers.customer_id: 고객 고유 ID\n" +
+                             "customers.name: 고객 이름\n" +
+                             "orders.order_id: 주문 고유 ID\n" +
+                             "orders.customer_id: 주문한 고객 ID";
       
       // 데이터 초기화
       _initializeData();
     } else {
       // 생성 모드일 때도 기본값으로 초기화
-      _datasetDescriptionController.text = "";
+      _datasetNameController.text = _currentExperiment.dataset.name;
+      _tablesController.text = _currentExperiment.dataset.tables.join(', ');
+      _columnsController.text = "";
       _trainSetData = [];
       _testSetData = [];
       _knowledgeSetData = [];
     }
   }
-  
+    
   // 데이터 초기화
   void _initializeData() {
     if (_currentMaterial == null) return;
@@ -102,11 +116,18 @@ class _MaterialScreenState extends State<MaterialScreen> {
       item.naturalLanguage, 
       item.sql,
     ]).toList();
+
+    // 데이터셋 관련 컨트롤러 초기화
+    _datasetNameController.text = _currentExperiment.dataset.name;
+    _tablesController.text = _currentExperiment.dataset.tables.join(', ');
+    _columnsController.text = "customers.customer_id: 고객 고유 ID\ncustomers.name: 고객 이름\norders.order_id: 주문 고유 ID\norders.customer_id: 주문한 고객 ID\nproducts.product_id: 제품 고유 ID\nproducts.price: 제품 가격";
   }
   
   @override
   void dispose() {
-    _datasetDescriptionController.dispose();
+    _datasetNameController.dispose();
+    _tablesController.dispose();
+    _columnsController.dispose();
     super.dispose();
   }
 
@@ -186,28 +207,6 @@ class _MaterialScreenState extends State<MaterialScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // 머티리얼 선택 드롭다운 (여러 개인 경우)
-                            if (materials.length > 1) ... [
-                              DropdownButton<int>(
-                                value: _selectedMaterialIndex,
-                                items: List.generate(materials.length, (index) {
-                                  return DropdownMenuItem<int>(
-                                    value: index,
-                                    child: Text('Material ${index + 1}'),
-                                  );
-                                }),
-                                onChanged: (value) {
-                                  if (value != null) {
-                                    setState(() {
-                                      _selectedMaterialIndex = value;
-                                      _currentMaterial = materials[value];
-                                      _initializeData();
-                                    });
-                                  }
-                                },
-                              ),
-                              const SizedBox(height: 20),
-                            ],
                             
                             // 액션 버튼
                             Row(
@@ -226,8 +225,7 @@ class _MaterialScreenState extends State<MaterialScreen> {
                               ],
                             ),
                             const SizedBox(height: 20),
-                            
-                            // 데이터셋 설명
+
                             Card(
                               margin: const EdgeInsets.only(bottom: 20),
                               child: Padding(
@@ -242,26 +240,69 @@ class _MaterialScreenState extends State<MaterialScreen> {
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                    const SizedBox(height: 8),
-                                    _isEditMode
-                                        ? TextField(
-                                            controller: _datasetDescriptionController,
-                                            decoration: const InputDecoration(
-                                              border: OutlineInputBorder(),
-                                              contentPadding: EdgeInsets.all(12),
-                                            ),
-                                            maxLines: 3,
-                                          )
-                                        : Container(
-                                            width: double.infinity,
-                                            padding: const EdgeInsets.all(12),
-                                            decoration: BoxDecoration(
-                                              border: Border.all(color: Colors.grey.shade300),
-                                              borderRadius: BorderRadius.circular(4),
-                                              color: Colors.grey.shade50,
-                                            ),
-                                            child: Text(_datasetDescriptionController.text),
-                                          ),
+                                    const SizedBox(height: 16),
+                                    
+                                    // 데이터셋 이름
+                                    Row(
+                                      children: [
+                                        const SizedBox(width: 100, child: Text('Dataset Name:')),
+                                        Expanded(
+                                          child: _isEditMode
+                                            ? TextField(
+                                                controller: _datasetNameController,
+                                                decoration: const InputDecoration(
+                                                  border: OutlineInputBorder(),
+                                                  contentPadding: EdgeInsets.all(8),
+                                                ),
+                                              )
+                                            : Text(_datasetNameController.text),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+                                    
+                                    // 테이블 목록
+                                    Row(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const SizedBox(width: 100, child: Text('Tables:')),
+                                        Expanded(
+                                          child: _isEditMode
+                                            ? TextField(
+                                                controller: _tablesController,
+                                                decoration: const InputDecoration(
+                                                  border: OutlineInputBorder(),
+                                                  contentPadding: EdgeInsets.all(8),
+                                                  hintText: 'Enter table names (comma separated)',
+                                                ),
+                                                maxLines: 3,
+                                              )
+                                            : Text(_tablesController.text),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+                                    
+                                    // 컬럼 설명
+                                    Row(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const SizedBox(width: 100, child: Text('Columns:')),
+                                        Expanded(
+                                          child: _isEditMode
+                                            ? TextField(
+                                                controller: _columnsController,
+                                                decoration: const InputDecoration(
+                                                  border: OutlineInputBorder(),
+                                                  contentPadding: EdgeInsets.all(8),
+                                                  hintText: 'Enter column details (table.column: description)',
+                                                ),
+                                                maxLines: 5,
+                                              )
+                                            : Text(_columnsController.text),
+                                        ),
+                                      ],
+                                    ),
                                   ],
                                 ),
                               ),
@@ -435,7 +476,7 @@ class _MaterialScreenState extends State<MaterialScreen> {
                 ),
               )
             else
-              _buildDataPreview(data),
+              _buildDataPreview(data, title.toLowerCase()), 
           ],
         ),
       ),
@@ -443,7 +484,7 @@ class _MaterialScreenState extends State<MaterialScreen> {
   }
   
   // 데이터 미리보기 위젯
-  Widget _buildDataPreview(List<List<String>> data) {
+  Widget _buildDataPreview(List<List<String>> data, String type) {
     // 최대 5개 행만 표시
     final previewData = data.take(5).toList();
     
@@ -456,11 +497,23 @@ class _MaterialScreenState extends State<MaterialScreen> {
         scrollDirection: Axis.horizontal,
         child: DataTable(
           columns: [
-            DataColumn(label: Text('#', style: TextStyle(fontWeight: FontWeight.bold))),
+            const DataColumn(label: Text('#', style: TextStyle(fontWeight: FontWeight.bold))),
             if (previewData.isNotEmpty && previewData[0].length > 0)
-              DataColumn(label: Text('Natural Language', style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(
+                label: Text(
+                  // Knowledge인 경우 "Key", 그 외는 "Natural Language"
+                  type == 'knowledge' ? 'Key' : 'Natural Language',
+                  style: const TextStyle(fontWeight: FontWeight.bold)
+                )
+              ),
             if (previewData.isNotEmpty && previewData[0].length > 1)
-              DataColumn(label: Text('SQL/Value', style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(
+                label: Text(
+                  // Knowledge인 경우 "Value", 그 외는 "SQL"
+                  type == 'knowledge' ? 'Value' : 'SQL',
+                  style: const TextStyle(fontWeight: FontWeight.bold)
+                )
+              ),
           ],
           rows: List.generate(previewData.length, (index) {
             return DataRow(
@@ -599,15 +652,76 @@ class _MaterialScreenState extends State<MaterialScreen> {
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                    const SizedBox(height: 8),
-                                    TextField(
-                                      controller: _datasetDescriptionController,
-                                      decoration: const InputDecoration(
-                                        border: OutlineInputBorder(),
-                                        hintText: 'Enter a description of your dataset',
-                                        contentPadding: EdgeInsets.all(12),
-                                      ),
-                                      maxLines: 3,
+                                    const SizedBox(height: 16),
+                                    
+                                    // 데이터셋 이름
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          'Dataset Name:',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        TextField(
+                                          controller: _datasetNameController,
+                                          decoration: const InputDecoration(
+                                            border: OutlineInputBorder(),
+                                            hintText: 'Enter dataset name',
+                                            contentPadding: EdgeInsets.all(12),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+                                    
+                                    // 테이블 목록
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          'Tables:',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        TextField(
+                                          controller: _tablesController,
+                                          decoration: const InputDecoration(
+                                            border: OutlineInputBorder(),
+                                            hintText: 'Enter table names (comma separated)',
+                                            contentPadding: EdgeInsets.all(12),
+                                          ),
+                                          maxLines: 2,
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+                                    
+                                    // 컬럼 설명
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          'Columns:',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        TextField(
+                                          controller: _columnsController,
+                                          decoration: const InputDecoration(
+                                            border: OutlineInputBorder(),
+                                            hintText: 'Enter column details (table.column: description)',
+                                            contentPadding: EdgeInsets.all(12),
+                                          ),
+                                          maxLines: 4,
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
@@ -683,7 +797,7 @@ class _MaterialScreenState extends State<MaterialScreen> {
                                               ),
                                             ),
                                           )
-                                        : _buildDataPreview(_trainSetData),
+                                        : _buildDataPreview(_trainSetData, 'train'),
                                   ],
                                 ),
                               ),
@@ -757,7 +871,7 @@ class _MaterialScreenState extends State<MaterialScreen> {
                                               ),
                                             ),
                                           )
-                                        : _buildDataPreview(_testSetData),
+                                        : _buildDataPreview(_testSetData, 'test'),
                                   ],
                                 ),
                               ),
@@ -831,7 +945,7 @@ class _MaterialScreenState extends State<MaterialScreen> {
                                               ),
                                             ),
                                           )
-                                        : _buildDataPreview(_knowledgeSetData),
+                                        : _buildDataPreview(_knowledgeSetData, 'knowledge'),
                                   ],
                                 ),
                               ),
@@ -933,10 +1047,10 @@ class _MaterialScreenState extends State<MaterialScreen> {
     ExperimentProvider experimentProvider,
     String experimentId,
   ) async {
-    // 유효성 검사
-    if (_datasetDescriptionController.text.trim().isEmpty) {
+    // 유효성 검사 - 데이터셋 이름만 필수로 변경
+    if (_datasetNameController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a dataset description')),
+        const SnackBar(content: Text('Please enter a dataset name')),
       );
       return;
     }
@@ -952,6 +1066,7 @@ class _MaterialScreenState extends State<MaterialScreen> {
     final testSet = _createMaterialItems('test', _testSetData);
     final knowledgeSet = _createMaterialItems('knowledge', _knowledgeSetData);
     
+    // 여기서부터는 기존 코드와 동일
     await experimentProvider.createMaterial(
       experimentId,
       trainSet,
@@ -990,10 +1105,10 @@ class _MaterialScreenState extends State<MaterialScreen> {
     ExperimentProvider experimentProvider,
     String experimentId,
   ) async {
-    // 유효성 검사
-    if (_datasetDescriptionController.text.trim().isEmpty) {
+    // 유효성 검사 - 데이터셋 이름만 필수로 변경
+    if (_datasetNameController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a dataset description')),
+        const SnackBar(content: Text('Please enter a dataset name')),
       );
       return;
     }
@@ -1005,8 +1120,7 @@ class _MaterialScreenState extends State<MaterialScreen> {
       return;
     }
     
-    // 현재는 업데이트 API가 없으므로 새 머티리얼을 생성하여 대체
-    // 실제 구현에서는 업데이트 API 사용
+    // 나머지 부분은 기존 코드와 동일
     final trainSet = _createMaterialItems('train', _trainSetData);
     final testSet = _createMaterialItems('test', _testSetData);
     final knowledgeSet = _createMaterialItems('knowledge', _knowledgeSetData);

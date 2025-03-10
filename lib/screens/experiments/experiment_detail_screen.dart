@@ -177,31 +177,39 @@ class _ExperimentDetailScreenState extends State<ExperimentDetailScreen> {
                               
                               // 데이터셋 목록 표시
                               Column(
-                                children: [
-                                  _buildDatasetRow(
-                                    'dataset1', 
-                                    true, 
-                                    'sync'
-                                  ),
-                                  _buildDatasetRow(
-                                    'dataset2', 
-                                    true, 
-                                    'sync'
-                                  ),
-                                  _buildDatasetRow(
-                                    'dataset3', 
-                                    false, 
-                                    'out of sync'
-                                  ),
-                                  _buildDatasetRow(
-                                    'dataset4', 
-                                    true, 
-                                    'sync'
-                                  ),
-                                ],
+                                children: experiment.dataset.tables.map((table) {
+                                  // 여기서는 테이블마다 랜덤하게 동기화 상태를 표시합니다 (예시용)
+                                  // 실제로는 각 테이블의 실제 동기화 상태를 확인해야 합니다
+                                  final isSync = table.contains('_') ? false : true; // 예시: 테이블 이름에 '_'가 있으면 비동기
+                                  return Container(
+                                    margin: const EdgeInsets.only(bottom: 8),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            // 데이터셋 이름을 테이블 이름 앞에 추가
+                                            '${experiment.dataset.name}.$table',
+                                          ),
+                                        ),
+                                        Container(
+                                          width: 80,
+                                          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                                          decoration: BoxDecoration(
+                                            color: isSync ? Colors.green : Colors.red,
+                                            borderRadius: BorderRadius.circular(4),
+                                          ),
+                                          alignment: Alignment.center,
+                                          child: Text(
+                                            isSync ? 'sync' : 'out of sync',
+                                            style: const TextStyle(color: Colors.white),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }).toList(),
                               ),
-                              const SizedBox(height: 24),
-                              
+                              const SizedBox(height: 12),
                               const Text(
                                 'evaluation',
                                 style: TextStyle(
@@ -247,9 +255,9 @@ class _ExperimentDetailScreenState extends State<ExperimentDetailScreen> {
     );
   }
   
-  Widget _buildDatasetRow(String name, bool isSync, String syncStatus) {
+  Widget _buildTableRow(String tableName, bool isSync) {
     final Color statusColor = isSync ? Colors.green : Colors.red;
-    final Color textColor = isSync ? Colors.white : Colors.white;
+    final String syncStatus = isSync ? 'sync' : 'out of sync';
     
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -265,7 +273,7 @@ class _ExperimentDetailScreenState extends State<ExperimentDetailScreen> {
                   bottomLeft: Radius.circular(4),
                 ),
               ),
-              child: Text(name),
+              child: Text(tableName),
             ),
           ),
           Container(
@@ -281,7 +289,7 @@ class _ExperimentDetailScreenState extends State<ExperimentDetailScreen> {
             alignment: Alignment.center,
             child: Text(
               syncStatus,
-              style: TextStyle(color: textColor),
+              style: const TextStyle(color: Colors.white),
             ),
           ),
         ],
