@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../../config/routes.dart';
 import '../../providers/workspace_provider.dart';
 import '../../widgets/sidebar_menu.dart';
 
 class WorkspaceCreateScreen extends StatefulWidget {
-  const WorkspaceCreateScreen({Key? key}) : super(key: key);
+  const WorkspaceCreateScreen({super.key});
 
   @override
   State<WorkspaceCreateScreen> createState() => _WorkspaceCreateScreenState();
@@ -16,7 +17,7 @@ class _WorkspaceCreateScreenState extends State<WorkspaceCreateScreen> {
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _membersController = TextEditingController();
-  
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -34,7 +35,7 @@ class _WorkspaceCreateScreenState extends State<WorkspaceCreateScreen> {
         children: [
           // 사이드바 메뉴
           const SidebarMenu(),
-          
+
           // 메인 콘텐츠
           Expanded(
             child: Padding(
@@ -45,20 +46,20 @@ class _WorkspaceCreateScreenState extends State<WorkspaceCreateScreen> {
                   // 헤더
                   const Text(
                     'Workspace',
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 24),
-                  
+
                   // 탭 버튼
                   Row(
                     children: [
                       Expanded(
                         child: InkWell(
                           onTap: () {
-                            Navigator.pushNamed(context, AppRoutes.workspaceList);
+                            Navigator.pushNamed(
+                              context,
+                              AppRoutes.workspaceList,
+                            );
                           },
                           child: Container(
                             decoration: BoxDecoration(
@@ -67,7 +68,10 @@ class _WorkspaceCreateScreenState extends State<WorkspaceCreateScreen> {
                             child: const Center(
                               child: Padding(
                                 padding: EdgeInsets.symmetric(vertical: 12.0),
-                                child: Text('list', style: TextStyle(fontSize: 16)),
+                                child: Text(
+                                  'list',
+                                  style: TextStyle(fontSize: 16),
+                                ),
                               ),
                             ),
                           ),
@@ -79,7 +83,10 @@ class _WorkspaceCreateScreenState extends State<WorkspaceCreateScreen> {
                           child: const Center(
                             child: Padding(
                               padding: EdgeInsets.symmetric(vertical: 12.0),
-                              child: Text('create', style: TextStyle(fontSize: 16)),
+                              child: Text(
+                                'create',
+                                style: TextStyle(fontSize: 16),
+                              ),
                             ),
                           ),
                         ),
@@ -87,7 +94,7 @@ class _WorkspaceCreateScreenState extends State<WorkspaceCreateScreen> {
                     ],
                   ),
                   const SizedBox(height: 24),
-                  
+
                   // 생성 폼
                   Expanded(
                     child: SingleChildScrollView(
@@ -120,7 +127,7 @@ class _WorkspaceCreateScreenState extends State<WorkspaceCreateScreen> {
                                 },
                               ),
                               const SizedBox(height: 24),
-                              
+
                               const Text(
                                 'description',
                                 style: TextStyle(
@@ -137,7 +144,7 @@ class _WorkspaceCreateScreenState extends State<WorkspaceCreateScreen> {
                                 maxLines: 3,
                               ),
                               const SizedBox(height: 24),
-                              
+
                               const Text(
                                 'members',
                                 style: TextStyle(
@@ -152,7 +159,8 @@ class _WorkspaceCreateScreenState extends State<WorkspaceCreateScreen> {
                                     child: TextFormField(
                                       controller: _membersController,
                                       decoration: const InputDecoration(
-                                        hintText: 'Enter member emails (comma separated)',
+                                        hintText:
+                                            'Enter member emails (comma separated)',
                                       ),
                                     ),
                                   ),
@@ -168,46 +176,59 @@ class _WorkspaceCreateScreenState extends State<WorkspaceCreateScreen> {
                                 ],
                               ),
                               const SizedBox(height: 32),
-                              
+
                               Center(
                                 child: SizedBox(
                                   width: 200,
                                   child: ElevatedButton(
-                                    onPressed: workspaceProvider.isLoading
-                                        ? null
-                                        : () async {
-                                            if (_formKey.currentState!.validate()) {
-                                              // 멤버 이메일 분리
-                                              final List<String> members = _membersController.text
-                                                  .split(',')
-                                                  .map((e) => e.trim())
-                                                  .where((e) => e.isNotEmpty)
-                                                  .toList();
-                                              
-                                              await workspaceProvider.createWorkspace(
-                                                _nameController.text,
-                                                _descriptionController.text,
-                                                members,
-                                              );
-                                              
-                                              if (!mounted) return;
-                                              Navigator.pushNamed(
-                                                context, 
-                                                AppRoutes.workspaceDetail,
-                                                arguments: {'workspaceId': workspaceProvider.selectedWorkspace!.id},
-                                              );
-                                            }
-                                          },
-                                    child: workspaceProvider.isLoading
-                                        ? const SizedBox(
-                                            height: 20,
-                                            width: 20,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                              color: Colors.white,
-                                            ),
-                                          )
-                                        : const Text('Create'),
+                                    onPressed:
+                                        workspaceProvider.isLoading
+                                            ? null
+                                            : () async {
+                                              if (_formKey.currentState!
+                                                  .validate()) {
+                                                // 멤버 이메일 분리
+                                                final List<String> members =
+                                                    _membersController.text
+                                                        .split(',')
+                                                        .map((e) => e.trim())
+                                                        .where(
+                                                          (e) => e.isNotEmpty,
+                                                        )
+                                                        .toList();
+
+                                                await workspaceProvider
+                                                    .createWorkspace(
+                                                      _nameController.text,
+                                                      _descriptionController
+                                                          .text,
+                                                      members,
+                                                    );
+
+                                                if (!mounted) return;
+                                                Navigator.pushNamed(
+                                                  context,
+                                                  AppRoutes.workspaceDetail,
+                                                  arguments: {
+                                                    'workspaceId':
+                                                        workspaceProvider
+                                                            .selectedWorkspace!
+                                                            .id,
+                                                  },
+                                                );
+                                              }
+                                            },
+                                    child:
+                                        workspaceProvider.isLoading
+                                            ? const SizedBox(
+                                              height: 20,
+                                              width: 20,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                color: Colors.white,
+                                              ),
+                                            )
+                                            : const Text('Create'),
                                   ),
                                 ),
                               ),

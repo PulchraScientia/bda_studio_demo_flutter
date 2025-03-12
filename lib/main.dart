@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 // 올바른 import 방식으로 수정
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+
 import 'config/routes.dart';
-import 'providers/workspace_provider.dart';
 import 'providers/experiment_provider.dart';
+import 'providers/workspace_provider.dart';
 import 'screens/home/home_screen.dart';
 
 void main() {
@@ -12,7 +13,7 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -28,9 +29,7 @@ class MyApp extends StatelessWidget {
           primarySwatch: Colors.blue,
           scaffoldBackgroundColor: Colors.white,
           // Google Fonts 사용
-          textTheme: GoogleFonts.robotoTextTheme(
-            Theme.of(context).textTheme,
-          ),
+          textTheme: GoogleFonts.robotoTextTheme(Theme.of(context).textTheme),
           appBarTheme: const AppBarTheme(
             backgroundColor: Colors.white,
             elevation: 0,
@@ -42,9 +41,7 @@ class MyApp extends StatelessWidget {
             ),
           ),
           inputDecorationTheme: InputDecorationTheme(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: const BorderSide(color: Colors.blue, width: 2),

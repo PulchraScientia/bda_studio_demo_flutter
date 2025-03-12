@@ -53,7 +53,10 @@ class Chat {
       assistantId: json['assistantId'],
       experimentId: json['experimentId'],
       name: json['name'],
-      messages: (json['messages'] as List).map((e) => ChatMessage.fromJson(e)).toList(),
+      messages:
+          (json['messages'] as List)
+              .map((e) => ChatMessage.fromJson(e))
+              .toList(),
       createdAt: DateTime.parse(json['createdAt']),
     );
   }

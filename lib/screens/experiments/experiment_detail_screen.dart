@@ -1,21 +1,21 @@
 // lib/screens/experiments/experiment_detail.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../../config/routes.dart';
-import '../../models/experiment.dart';
-import '../../providers/workspace_provider.dart';
 import '../../providers/experiment_provider.dart';
+import '../../providers/workspace_provider.dart';
 import '../../widgets/sidebar_menu.dart';
 
 class ExperimentDetailScreen extends StatefulWidget {
   final String? workspaceId;
   final String? experimentId;
-  
+
   const ExperimentDetailScreen({
-    Key? key, 
-    this.workspaceId, 
+    super.key,
+    this.workspaceId,
     this.experimentId,
-  }) : super(key: key);
+  });
 
   @override
   State<ExperimentDetailScreen> createState() => _ExperimentDetailScreenState();
@@ -25,29 +25,32 @@ class _ExperimentDetailScreenState extends State<ExperimentDetailScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
   late TextEditingController _descriptionController;
-  
+
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController();
     _descriptionController = TextEditingController();
-    
+
     // 데이터 초기화는 didChangeDependencies에서 수행
   }
-  
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final experimentProvider = Provider.of<ExperimentProvider>(context, listen: false);
+    final experimentProvider = Provider.of<ExperimentProvider>(
+      context,
+      listen: false,
+    );
     final experiment = experimentProvider.experiments.firstWhere(
       (exp) => exp.id == widget.experimentId,
       orElse: () => experimentProvider.selectedExperiment!,
     );
-    
+
     _nameController.text = experiment.name;
     _descriptionController.text = experiment.description;
   }
-  
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -59,19 +62,19 @@ class _ExperimentDetailScreenState extends State<ExperimentDetailScreen> {
   Widget build(BuildContext context) {
     final experimentProvider = Provider.of<ExperimentProvider>(context);
     final workspaceProvider = Provider.of<WorkspaceProvider>(context);
-    
+
     final workspace = workspaceProvider.selectedWorkspace!;
     final experiment = experimentProvider.experiments.firstWhere(
       (exp) => exp.id == widget.experimentId,
       orElse: () => experimentProvider.selectedExperiment!,
     );
-    
+
     return Scaffold(
       body: Row(
         children: [
           // 사이드바 메뉴
           const SidebarMenu(),
-          
+
           // 메인 콘텐츠
           Expanded(
             child: Padding(
@@ -85,7 +88,7 @@ class _ExperimentDetailScreenState extends State<ExperimentDetailScreen> {
                       InkWell(
                         onTap: () {
                           Navigator.pushNamed(
-                            context, 
+                            context,
                             AppRoutes.experimentList,
                             arguments: {'workspaceId': workspace.id},
                           );
@@ -101,7 +104,7 @@ class _ExperimentDetailScreenState extends State<ExperimentDetailScreen> {
                     ],
                   ),
                   const SizedBox(height: 24),
-                  
+
                   // 실험 제목
                   Text(
                     experiment.name,
@@ -111,7 +114,7 @@ class _ExperimentDetailScreenState extends State<ExperimentDetailScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  
+
                   // 디테일 폼
                   Expanded(
                     child: SingleChildScrollView(
@@ -148,7 +151,7 @@ class _ExperimentDetailScreenState extends State<ExperimentDetailScreen> {
                                 },
                               ),
                               const SizedBox(height: 24),
-                              
+
                               const Text(
                                 'description',
                                 style: TextStyle(
@@ -165,7 +168,7 @@ class _ExperimentDetailScreenState extends State<ExperimentDetailScreen> {
                                 maxLines: 3,
                               ),
                               const SizedBox(height: 24),
-                              
+
                               const Text(
                                 'dataset',
                                 style: TextStyle(
@@ -174,40 +177,56 @@ class _ExperimentDetailScreenState extends State<ExperimentDetailScreen> {
                                 ),
                               ),
                               const SizedBox(height: 8),
-                              
+
                               // 데이터셋 목록 표시
                               Column(
-                                children: experiment.dataset.tables.map((table) {
-                                  // 여기서는 테이블마다 랜덤하게 동기화 상태를 표시합니다 (예시용)
-                                  // 실제로는 각 테이블의 실제 동기화 상태를 확인해야 합니다
-                                  final isSync = table.contains('_') ? false : true; // 예시: 테이블 이름에 '_'가 있으면 비동기
-                                  return Container(
-                                    margin: const EdgeInsets.only(bottom: 8),
-                                    child: Row(
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            // 데이터셋 이름을 테이블 이름 앞에 추가
-                                            '${experiment.dataset.name}.$table',
-                                          ),
+                                children:
+                                    experiment.dataset.tables.map((table) {
+                                      // 여기서는 테이블마다 랜덤하게 동기화 상태를 표시합니다 (예시용)
+                                      // 실제로는 각 테이블의 실제 동기화 상태를 확인해야 합니다
+                                      final isSync =
+                                          table.contains('_')
+                                              ? false
+                                              : true; // 예시: 테이블 이름에 '_'가 있으면 비동기
+                                      return Container(
+                                        margin: const EdgeInsets.only(
+                                          bottom: 8,
                                         ),
-                                        Container(
-                                          width: 80,
-                                          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                                          decoration: BoxDecoration(
-                                            color: isSync ? Colors.green : Colors.red,
-                                            borderRadius: BorderRadius.circular(4),
-                                          ),
-                                          alignment: Alignment.center,
-                                          child: Text(
-                                            isSync ? 'sync' : 'out of sync',
-                                            style: const TextStyle(color: Colors.white),
-                                          ),
+                                        child: Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                // 데이터셋 이름을 테이블 이름 앞에 추가
+                                                '${experiment.dataset.name}.$table',
+                                              ),
+                                            ),
+                                            Container(
+                                              width: 80,
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    vertical: 4,
+                                                    horizontal: 8,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color:
+                                                    isSync
+                                                        ? Colors.green
+                                                        : Colors.red,
+                                                borderRadius:
+                                                    BorderRadius.circular(4),
+                                              ),
+                                              alignment: Alignment.center,
+                                              child: Text(
+                                                isSync ? 'sync' : 'out of sync',
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                      ],
-                                    ),
-                                  );
-                                }).toList(),
+                                      );
+                                    }).toList(),
                               ),
                               const SizedBox(height: 12),
                               const Text(
@@ -225,7 +244,7 @@ class _ExperimentDetailScreenState extends State<ExperimentDetailScreen> {
                                 ),
                               ),
                               const SizedBox(height: 24),
-                              
+
                               const Text(
                                 'assistant',
                                 style: TextStyle(
@@ -254,11 +273,11 @@ class _ExperimentDetailScreenState extends State<ExperimentDetailScreen> {
       ),
     );
   }
-  
+
   Widget _buildTableRow(String tableName, bool isSync) {
     final Color statusColor = isSync ? Colors.green : Colors.red;
     final String syncStatus = isSync ? 'sync' : 'out of sync';
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       child: Row(

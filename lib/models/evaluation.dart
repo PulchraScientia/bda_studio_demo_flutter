@@ -57,7 +57,10 @@ class Evaluation {
       experimentId: json['experimentId'],
       materialId: json['materialId'],
       accuracy: json['accuracy'],
-      results: (json['results'] as List).map((e) => EvaluationResult.fromJson(e)).toList(),
+      results:
+          (json['results'] as List)
+              .map((e) => EvaluationResult.fromJson(e))
+              .toList(),
       createdAt: DateTime.parse(json['createdAt']),
     );
   }

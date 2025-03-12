@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+
 import '../models/workspace.dart';
 
 class WorkspaceProvider with ChangeNotifier {
@@ -37,11 +38,17 @@ class WorkspaceProvider with ChangeNotifier {
       ),
     ];
   }
+
   void selectWorkspace(String workspaceId) {
     _selectedWorkspace = _workspaces.firstWhere((ws) => ws.id == workspaceId);
     notifyListeners();
   }
-  Future<void> createWorkspace(String name, String description, List<String> members) async {
+
+  Future<void> createWorkspace(
+    String name,
+    String description,
+    List<String> members,
+  ) async {
     _isLoading = true;
     notifyListeners();
     try {
@@ -64,7 +71,13 @@ class WorkspaceProvider with ChangeNotifier {
       notifyListeners();
     }
   }
-  Future<void> updateWorkspace(String id, String name, String description, List<String> members) async {
+
+  Future<void> updateWorkspace(
+    String id,
+    String name,
+    String description,
+    List<String> members,
+  ) async {
     _isLoading = true;
     notifyListeners();
     try {
@@ -92,6 +105,7 @@ class WorkspaceProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+
   void clearSelectedWorkspace() {
     _selectedWorkspace = null;
     notifyListeners();

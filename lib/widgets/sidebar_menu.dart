@@ -1,20 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../config/routes.dart';
-import '../providers/workspace_provider.dart';
 import '../providers/experiment_provider.dart';
+import '../providers/workspace_provider.dart';
 
 class SidebarMenu extends StatelessWidget {
-  const SidebarMenu({Key? key}) : super(key: key);
+  const SidebarMenu({super.key});
 
   @override
   Widget build(BuildContext context) {
     final workspaceProvider = Provider.of<WorkspaceProvider>(context);
     final experimentProvider = Provider.of<ExperimentProvider>(context);
-    
+
     final selectedWorkspace = workspaceProvider.selectedWorkspace;
     final selectedExperiment = experimentProvider.selectedExperiment;
-    
+
     return Container(
       width: 250,
       color: Colors.grey[900],
@@ -56,7 +57,7 @@ class SidebarMenu extends StatelessWidget {
               ],
             ),
           ),
-          
+
           // 워크스페이스 메뉴
           Expanded(
             child: ListView(
@@ -71,7 +72,7 @@ class SidebarMenu extends StatelessWidget {
                     Navigator.pushNamed(context, AppRoutes.workspaceList);
                   },
                 ),
-                
+
                 // 선택된 워크스페이스가 있을 때 실험 메뉴 표시
                 if (selectedWorkspace != null) ...[
                   const SizedBox(height: 16),
@@ -81,13 +82,13 @@ class SidebarMenu extends StatelessWidget {
                     onTap: () {
                       experimentProvider.clearSelectedExperiment();
                       Navigator.pushNamed(
-                        context, 
+                        context,
                         AppRoutes.experimentList,
                         arguments: {'workspaceId': selectedWorkspace.id},
                       );
                     },
                   ),
-                  
+
                   // 선택된 실험이 있을 때 하위 메뉴 표시
                   if (selectedExperiment != null) ...[
                     _buildMenuItem(
@@ -96,7 +97,7 @@ class SidebarMenu extends StatelessWidget {
                       icon: Icons.science,
                       onTap: () {
                         Navigator.pushNamed(
-                          context, 
+                          context,
                           AppRoutes.materialList,
                           arguments: {
                             'workspaceId': selectedWorkspace.id,
@@ -111,7 +112,7 @@ class SidebarMenu extends StatelessWidget {
                       icon: Icons.check_circle,
                       onTap: () {
                         Navigator.pushNamed(
-                          context, 
+                          context,
                           AppRoutes.evaluationList,
                           arguments: {
                             'workspaceId': selectedWorkspace.id,
@@ -126,7 +127,7 @@ class SidebarMenu extends StatelessWidget {
                       icon: Icons.support_agent,
                       onTap: () {
                         Navigator.pushNamed(
-                          context, 
+                          context,
                           AppRoutes.assistantList,
                           arguments: {
                             'workspaceId': selectedWorkspace.id,
@@ -141,10 +142,11 @@ class SidebarMenu extends StatelessWidget {
                       icon: Icons.chat,
                       onTap: () {
                         // 어시스턴트가 있는지 확인
-                        final assistants = experimentProvider.getAssistantsForExperiment(selectedExperiment.id);
+                        final assistants = experimentProvider
+                            .getAssistantsForExperiment(selectedExperiment.id);
                         if (assistants.isNotEmpty) {
                           Navigator.pushNamed(
-                            context, 
+                            context,
                             AppRoutes.chatList,
                             arguments: {
                               'workspaceId': selectedWorkspace.id,
@@ -162,7 +164,7 @@ class SidebarMenu extends StatelessWidget {
               ],
             ),
           ),
-          
+
           // 하단 메뉴 (설정 등)
           Container(
             color: Colors.grey[850],
@@ -176,7 +178,9 @@ class SidebarMenu extends StatelessWidget {
                   onTap: () {
                     // 설정 페이지로 이동 (미구현)
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Settings page not implemented yet')),
+                      const SnackBar(
+                        content: Text('Settings page not implemented yet'),
+                      ),
                     );
                   },
                 ),
@@ -187,7 +191,9 @@ class SidebarMenu extends StatelessWidget {
                   onTap: () {
                     // 도움말 페이지로 이동 (미구현)
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Help page not implemented yet')),
+                      const SnackBar(
+                        content: Text('Help page not implemented yet'),
+                      ),
                     );
                   },
                 ),
@@ -198,26 +204,27 @@ class SidebarMenu extends StatelessWidget {
       ),
     );
   }
-  
+
   // 어시스턴트가 없을 때 다이얼로그 표시
   void _showNoAssistantsDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('No Assistants Available'),
-        content: const Text(
-          'You need to create an assistant first.\n\nGo to Evaluations and deploy an evaluation as an assistant.'
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('No Assistants Available'),
+            content: const Text(
+              'You need to create an assistant first.\n\nGo to Evaluations and deploy an evaluation as an assistant.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
-  
+
   // 메뉴 헤더 위젯
   Widget _buildMenuHeader({
     required BuildContext context,
@@ -240,7 +247,7 @@ class SidebarMenu extends StatelessWidget {
       ),
     );
   }
-  
+
   // 메뉴 아이템 위젯
   Widget _buildMenuItem({
     required BuildContext context,
@@ -255,18 +262,11 @@ class SidebarMenu extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            Icon(
-              icon,
-              size: 20,
-              color: Colors.grey[400],
-            ),
+            Icon(icon, size: 20, color: Colors.grey[400]),
             const SizedBox(width: 12),
             Text(
               title,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[300],
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey[300]),
             ),
           ],
         ),

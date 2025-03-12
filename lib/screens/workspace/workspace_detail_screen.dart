@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../../config/routes.dart';
 import '../../providers/workspace_provider.dart';
 import '../../widgets/sidebar_menu.dart';
 
 class WorkspaceDetailScreen extends StatefulWidget {
   final String? workspaceId;
-  
-  const WorkspaceDetailScreen({Key? key, this.workspaceId}) : super(key: key);
+
+  const WorkspaceDetailScreen({super.key, this.workspaceId});
 
   @override
   State<WorkspaceDetailScreen> createState() => _WorkspaceDetailScreenState();
@@ -18,31 +19,34 @@ class _WorkspaceDetailScreenState extends State<WorkspaceDetailScreen> {
   late TextEditingController _nameController;
   late TextEditingController _descriptionController;
   late TextEditingController _membersController;
-  
+
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController();
     _descriptionController = TextEditingController();
     _membersController = TextEditingController();
-    
+
     // 데이터 초기화는 didChangeDependencies에서 수행
   }
-  
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final workspaceProvider = Provider.of<WorkspaceProvider>(context, listen: false);
+    final workspaceProvider = Provider.of<WorkspaceProvider>(
+      context,
+      listen: false,
+    );
     final workspace = workspaceProvider.workspaces.firstWhere(
       (ws) => ws.id == widget.workspaceId,
       orElse: () => workspaceProvider.selectedWorkspace!,
     );
-    
+
     _nameController.text = workspace.name;
     _descriptionController.text = workspace.description;
     _membersController.text = workspace.members.join(', ');
   }
-  
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -64,7 +68,7 @@ class _WorkspaceDetailScreenState extends State<WorkspaceDetailScreen> {
         children: [
           // 사이드바 메뉴
           const SidebarMenu(),
-          
+
           // 메인 콘텐츠
           Expanded(
             child: Padding(
@@ -83,14 +87,14 @@ class _WorkspaceDetailScreenState extends State<WorkspaceDetailScreen> {
                           children: [
                             Icon(Icons.arrow_back),
                             SizedBox(width: 8),
-                            Text('workspace list')
+                            Text('workspace list'),
                           ],
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 24),
-                  
+
                   // 워크스페이스 제목
                   Text(
                     workspace.name,
@@ -100,7 +104,7 @@ class _WorkspaceDetailScreenState extends State<WorkspaceDetailScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  
+
                   // 디테일 폼
                   Expanded(
                     child: SingleChildScrollView(
@@ -137,7 +141,7 @@ class _WorkspaceDetailScreenState extends State<WorkspaceDetailScreen> {
                                 },
                               ),
                               const SizedBox(height: 24),
-                              
+
                               const Text(
                                 'description',
                                 style: TextStyle(
@@ -154,7 +158,7 @@ class _WorkspaceDetailScreenState extends State<WorkspaceDetailScreen> {
                                 maxLines: 3,
                               ),
                               const SizedBox(height: 24),
-                              
+
                               const Text(
                                 'members',
                                 style: TextStyle(
@@ -169,7 +173,8 @@ class _WorkspaceDetailScreenState extends State<WorkspaceDetailScreen> {
                                     child: TextFormField(
                                       controller: _membersController,
                                       decoration: const InputDecoration(
-                                        hintText: 'Enter member emails (comma separated)',
+                                        hintText:
+                                            'Enter member emails (comma separated)',
                                       ),
                                     ),
                                   ),
@@ -185,45 +190,59 @@ class _WorkspaceDetailScreenState extends State<WorkspaceDetailScreen> {
                                 ],
                               ),
                               const SizedBox(height: 32),
-                              
+
                               Center(
                                 child: SizedBox(
                                   width: 200,
                                   child: ElevatedButton(
-                                    onPressed: workspaceProvider.isLoading
-                                        ? null
-                                        : () async {
-                                            if (_formKey.currentState!.validate()) {
-                                              // 멤버 이메일 분리
-                                              final List<String> members = _membersController.text
-                                                  .split(',')
-                                                  .map((e) => e.trim())
-                                                  .where((e) => e.isNotEmpty)
-                                                  .toList();
-                                              
-                                              await workspaceProvider.updateWorkspace(
-                                                workspace.id,
-                                                _nameController.text,
-                                                _descriptionController.text,
-                                                members,
-                                              );
-                                              
-                                              if (!mounted) return;
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                const SnackBar(content: Text('Workspace updated successfully')),
-                                              );
-                                            }
-                                          },
-                                    child: workspaceProvider.isLoading
-                                        ? const SizedBox(
-                                            height: 20,
-                                            width: 20,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                              color: Colors.white,
-                                            ),
-                                          )
-                                        : const Text('Update'),
+                                    onPressed:
+                                        workspaceProvider.isLoading
+                                            ? null
+                                            : () async {
+                                              if (_formKey.currentState!
+                                                  .validate()) {
+                                                // 멤버 이메일 분리
+                                                final List<String> members =
+                                                    _membersController.text
+                                                        .split(',')
+                                                        .map((e) => e.trim())
+                                                        .where(
+                                                          (e) => e.isNotEmpty,
+                                                        )
+                                                        .toList();
+
+                                                await workspaceProvider
+                                                    .updateWorkspace(
+                                                      workspace.id,
+                                                      _nameController.text,
+                                                      _descriptionController
+                                                          .text,
+                                                      members,
+                                                    );
+
+                                                if (!mounted) return;
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                      'Workspace updated successfully',
+                                                    ),
+                                                  ),
+                                                );
+                                              }
+                                            },
+                                    child:
+                                        workspaceProvider.isLoading
+                                            ? const SizedBox(
+                                              height: 20,
+                                              width: 20,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                color: Colors.white,
+                                              ),
+                                            )
+                                            : const Text('Update'),
                                   ),
                                 ),
                               ),

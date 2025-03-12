@@ -1,24 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../../config/routes.dart';
-import '../../providers/workspace_provider.dart';
 import '../../providers/experiment_provider.dart';
+import '../../providers/workspace_provider.dart';
 import '../../widgets/sidebar_menu.dart';
 
 class WorkspaceListScreen extends StatelessWidget {
-  const WorkspaceListScreen({Key? key}) : super(key: key);
-  
+  const WorkspaceListScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     final workspaceProvider = Provider.of<WorkspaceProvider>(context);
     final workspaces = workspaceProvider.workspaces;
-    
+
     return Scaffold(
       body: Row(
         children: [
           // 사이드바 메뉴
           const SidebarMenu(),
-          
+
           // 메인 콘텐츠
           Expanded(
             child: Padding(
@@ -29,13 +30,10 @@ class WorkspaceListScreen extends StatelessWidget {
                   // 헤더
                   const Text(
                     'Workspace',
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 24),
-                  
+
                   // 탭 버튼
                   Row(
                     children: [
@@ -45,7 +43,10 @@ class WorkspaceListScreen extends StatelessWidget {
                           child: const Center(
                             child: Padding(
                               padding: EdgeInsets.symmetric(vertical: 12.0),
-                              child: Text('list', style: TextStyle(fontSize: 16)),
+                              child: Text(
+                                'list',
+                                style: TextStyle(fontSize: 16),
+                              ),
                             ),
                           ),
                         ),
@@ -53,7 +54,10 @@ class WorkspaceListScreen extends StatelessWidget {
                       Expanded(
                         child: InkWell(
                           onTap: () {
-                            Navigator.pushNamed(context, AppRoutes.workspaceCreate);
+                            Navigator.pushNamed(
+                              context,
+                              AppRoutes.workspaceCreate,
+                            );
                           },
                           child: Container(
                             decoration: BoxDecoration(
@@ -62,7 +66,10 @@ class WorkspaceListScreen extends StatelessWidget {
                             child: const Center(
                               child: Padding(
                                 padding: EdgeInsets.symmetric(vertical: 12.0),
-                                child: Text('create', style: TextStyle(fontSize: 16)),
+                                child: Text(
+                                  'create',
+                                  style: TextStyle(fontSize: 16),
+                                ),
                               ),
                             ),
                           ),
@@ -71,7 +78,7 @@ class WorkspaceListScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 24),
-                  
+
                   // 워크스페이스 목록
                   Expanded(
                     child: ListView.builder(
@@ -92,25 +99,38 @@ class WorkspaceListScreen extends StatelessWidget {
                               Expanded(
                                 child: InkWell(
                                   onTap: () {
-                                    workspaceProvider.selectWorkspace(workspace.id);
-                                    
+                                    workspaceProvider.selectWorkspace(
+                                      workspace.id,
+                                    );
+
                                     // 선택한 워크스페이스의 실험 목록 확인
-                                    final experimentProvider = Provider.of<ExperimentProvider>(context, listen: false);
-                                    final experiments = experimentProvider.getExperimentsForWorkspace(workspace.id);
-                                    
+                                    final experimentProvider =
+                                        Provider.of<ExperimentProvider>(
+                                          context,
+                                          listen: false,
+                                        );
+                                    final experiments = experimentProvider
+                                        .getExperimentsForWorkspace(
+                                          workspace.id,
+                                        );
+
                                     if (experiments.isEmpty) {
                                       // 실험이 없으면 실험 생성 페이지로 이동
                                       Navigator.pushNamed(
                                         context,
                                         AppRoutes.experimentCreate,
-                                        arguments: {'workspaceId': workspace.id},
+                                        arguments: {
+                                          'workspaceId': workspace.id,
+                                        },
                                       );
                                     } else {
                                       // 실험이 있으면 실험 목록 페이지로 이동
                                       Navigator.pushNamed(
                                         context,
                                         AppRoutes.experimentList,
-                                        arguments: {'workspaceId': workspace.id},
+                                        arguments: {
+                                          'workspaceId': workspace.id,
+                                        },
                                       );
                                     }
                                   },
@@ -120,11 +140,13 @@ class WorkspaceListScreen extends StatelessWidget {
                                   ),
                                 ),
                               ),
-                              
+
                               // 편집 버튼
                               ElevatedButton.icon(
                                 onPressed: () {
-                                  workspaceProvider.selectWorkspace(workspace.id);
+                                  workspaceProvider.selectWorkspace(
+                                    workspace.id,
+                                  );
                                   Navigator.pushNamed(
                                     context,
                                     AppRoutes.workspaceDetail,
@@ -134,7 +156,10 @@ class WorkspaceListScreen extends StatelessWidget {
                                 icon: const Icon(Icons.edit),
                                 label: const Text('Edit'),
                                 style: ElevatedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
                                 ),
                               ),
                             ],

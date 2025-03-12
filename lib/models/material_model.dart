@@ -22,9 +22,18 @@ class MaterialModel {
     return MaterialModel(
       id: json['id'],
       experimentId: json['experimentId'],
-      trainSet: (json['trainSet'] as List).map((e) => MaterialItem.fromJson(e)).toList(),
-      testSet: (json['testSet'] as List).map((e) => MaterialItem.fromJson(e)).toList(),
-      knowledgeSet: (json['knowledgeSet'] as List).map((e) => MaterialItem.fromJson(e)).toList(),
+      trainSet:
+          (json['trainSet'] as List)
+              .map((e) => MaterialItem.fromJson(e))
+              .toList(),
+      testSet:
+          (json['testSet'] as List)
+              .map((e) => MaterialItem.fromJson(e))
+              .toList(),
+      knowledgeSet:
+          (json['knowledgeSet'] as List)
+              .map((e) => MaterialItem.fromJson(e))
+              .toList(),
       createdAt: DateTime.parse(json['createdAt']),
     );
   }
