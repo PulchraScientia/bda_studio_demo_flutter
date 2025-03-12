@@ -56,11 +56,11 @@ class _EvaluationDetailScreenState extends State<EvaluationDetailScreen> {
           break;
         }
       }
+    }
     // ID로 찾지 못한 경우, 실험에 평가가 있으면 첫 번째 평가를 사용
     if (evaluation == null && experimentProvider.evaluations.isNotEmpty) {
       evaluation = experimentProvider.evaluations.first;
     }
-
 
     // 평가 정보 생성 시간 기반 날짜 문자열
     String getFormattedDate(DateTime date) {
